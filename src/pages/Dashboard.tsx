@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Dumbbell, Copy, Trash2, ChevronRight, Calendar } from 'lucide-react'
+import { Plus, Dumbbell, Copy, Trash2, ChevronRight } from 'lucide-react'
 import { useWorkoutContext } from '../context/WorkoutContext'
 import { ThemeToggle } from '../components/ui/ThemeToggle'
 import { Button } from '../components/ui/Button'
@@ -102,12 +102,7 @@ export function Dashboard() {
                                                 <Badge variant="blue">
                                                     {day.exercises.length} ejercicio{day.exercises.length !== 1 ? 's' : ''}
                                                 </Badge>
-                                                {day.lastPerformed && (
-                                                    <span className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-600">
-                                                        <Calendar size={11} />
-                                                        {getRelativeDate(day.lastPerformed)}
-                                                    </span>
-                                                )}
+
                                             </div>
                                         </div>
                                     </div>

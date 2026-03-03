@@ -1,4 +1,4 @@
-import type { WorkoutDay, WorkoutSet } from '../types'
+import type { WorkoutDay, Exercise, LoggedSet } from '../types'
 
 export function generateId(): string {
     return crypto.randomUUID()
@@ -28,29 +28,39 @@ export function getRelativeDate(iso: string): string {
 }
 
 export function copyWorkoutDay(day: WorkoutDay): WorkoutDay {
-    const copy: WorkoutDay = JSON.parse(JSON.stringify(day))
+    const copy: WorkoutDay = structuredClone(day)
     copy.id = generateId()
     copy.name = `${day.name} (copia)`
     copy.createdAt = new Date().toISOString()
-    copy.lastPerformed = undefined
     copy.exercises = copy.exercises.map(e => ({
         ...e,
         id: generateId(),
-        sets: e.sets.map(s => ({ ...s, id: generateId(), weight: s.weight, reps: s.reps, rir: s.rir })),
+        weeks: e.weeks.map(w => ({
+            ...w,
+            id: generateId(),
+            sets: w.sets.map(s => ({ ...s, id: generateId() })),
+        })),
     }))
     return copy
 }
 
-export function calcTotalVolume(sets: WorkoutSet[]): number {
+export function calcTotalVolume(sets: LoggedSet[]): number {
     return sets.reduce((sum, s) => {
-        const w = Number(s.weight) || 0
-        const r = Number(s.reps) || 0
+        const w = s.weight ?? 0
+        const r = s.reps ?? 0
         return sum + w * r
     }, 0)
 }
 
-export function getCompletedSets(sets: WorkoutSet[]): number {
-    return sets.filter(s => s.weight !== '' && s.reps !== '').length
+export function getCompletedSets(sets: LoggedSet[]): number {
+    return sets.filter(s => s.weight !== null && s.reps !== null).length
+}
+
+/** Fórmula Epley: estima el 1RM a partir de peso y reps */
+export function calc1RM(weight: number, reps: number): number {
+    if (reps <= 0) return 0
+    if (reps === 1) return weight
+    return Math.round(weight * (1 + reps / 30))
 }
 
 export function getMuscleGroups(): string[] {
@@ -61,15 +71,38 @@ export function getMuscleGroups(): string[] {
     ]
 }
 
-export function groupSessionsByWeek<T extends { date: string }>(sessions: T[]): Record<string, T[]> {
-    const weeks: Record<string, T[]> = {}
-    sessions.forEach(s => {
-        const d = new Date(s.date)
-        const monday = new Date(d)
-        monday.setDate(d.getDate() - ((d.getDay() + 6) % 7))
-        const key = monday.toISOString().slice(0, 10)
-        if (!weeks[key]) weeks[key] = []
-        weeks[key].push(s)
-    })
-    return weeks
+export interface WeekProgress {
+    weekNumber: number
+    label: string
+    maxWeight: number
+    totalVolume: number
+    totalSets: number
+    estimated1RM: number
+}
+
+/**
+ * Devuelve la progresión histórica de un ejercicio, lista para gráficas.
+ * Ordenada por weekNumber ascendente.
+ */
+export function getExerciseProgress(exercise: Exercise): WeekProgress[] {
+    return exercise.weeks
+        .slice()
+        .sort((a, b) => a.weekNumber - b.weekNumber)
+        .map(week => {
+            const completed = week.sets.filter(s => s.weight !== null && s.reps !== null)
+            const maxWeight = completed.length > 0
+                ? Math.max(...completed.map(s => s.weight!))
+                : 0
+            const bestSet = completed.find(s => s.weight === maxWeight)
+            const volume = calcTotalVolume(completed)
+
+            return {
+                weekNumber: week.weekNumber,
+                label: week.label ?? `S${week.weekNumber}`,
+                maxWeight,
+                totalVolume: volume,
+                totalSets: completed.length,
+                estimated1RM: bestSet ? calc1RM(bestSet.weight!, bestSet.reps!) : 0,
+            }
+        })
 }

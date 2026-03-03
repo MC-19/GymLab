@@ -121,14 +121,14 @@ export function WorkoutDayPage() {
                     <div className="h-8 w-px bg-gray-200 dark:bg-white/10" />
                     <div className="text-center">
                         <p className="text-lg font-bold text-gray-900 dark:text-white">
-                            {day.exercises.reduce((t, e) => t + e.sets.length, 0)}
+                            {day.exercises.reduce((t, e) => t + e.weeks.reduce((wt, w) => wt + w.sets.length, 0), 0)}
                         </p>
                         <p className="text-xs text-gray-500 dark:text-gray-600">series totales</p>
                     </div>
                     <div className="h-8 w-px bg-gray-200 dark:bg-white/10" />
                     <div className="text-center flex-1">
                         <p className="text-lg font-bold text-blue-600 dark:text-blue-400">
-                            {day.exercises.reduce((t, e) => t + getCompletedSets(e.sets), 0)}
+                            {day.exercises.reduce((t, e) => t + e.weeks.reduce((wt, w) => wt + getCompletedSets(w.sets), 0), 0)}
                         </p>
                         <p className="text-xs text-gray-500 dark:text-gray-600">completadas</p>
                     </div>
@@ -149,8 +149,9 @@ export function WorkoutDayPage() {
                 ) : (
                     <div className="space-y-3">
                         {day.exercises.map(ex => {
-                            const completed = getCompletedSets(ex.sets)
-                            const total = ex.sets.length
+                            const allSets = ex.weeks.flatMap(w => w.sets)
+                            const completed = getCompletedSets(allSets)
+                            const total = allSets.length
                             const progress = total > 0 ? (completed / total) * 100 : 0
 
                             return (

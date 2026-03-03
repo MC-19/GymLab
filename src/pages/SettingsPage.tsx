@@ -14,7 +14,7 @@ const themeOptions: { value: ThemeMode; label: string; icon: React.ReactNode }[]
 
 export function SettingsPage() {
     const { theme, setTheme } = useTheme()
-    const { days, sessions, showToast } = useWorkoutContext()
+    const { days, showToast } = useWorkoutContext()
     const [showClearModal, setShowClearModal] = useState(false)
 
     const handleClearData = () => {
@@ -23,7 +23,8 @@ export function SettingsPage() {
     }
 
     const totalExercises = days.reduce((sum, d) => sum + d.exercises.length, 0)
-    const totalSets = days.reduce((sum, d) => sum + d.exercises.reduce((es, e) => es + e.sets.length, 0), 0)
+    const totalWeeks = days.reduce((sum, d) => sum + d.exercises.reduce((es, e) => es + e.weeks.length, 0), 0)
+    const totalSets = days.reduce((sum, d) => sum + d.exercises.reduce((es, e) => es + e.weeks.reduce((ws, w) => ws + w.sets.length, 0), 0), 0)
 
     return (
         <div className="page-enter">
@@ -61,8 +62,8 @@ export function SettingsPage() {
                     <div className="space-y-3">
                         <StatRow label="Días de entrenamiento" value={String(days.length)} />
                         <StatRow label="Ejercicios configurados" value={String(totalExercises)} />
+                        <StatRow label="Semanas registradas" value={String(totalWeeks)} />
                         <StatRow label="Series totales" value={String(totalSets)} />
-                        <StatRow label="Sesiones registradas" value={String(sessions.length)} />
                     </div>
                 </Section>
 

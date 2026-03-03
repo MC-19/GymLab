@@ -33,8 +33,8 @@ export function Input({ label, error, className = '', ...props }: InputProps) {
 
 interface NumberInputProps {
     label: string
-    value: number | ''
-    onChange: (value: number | '') => void
+    value: number | null
+    onChange: (value: number | null) => void
     min?: number
     max?: number
     step?: number
@@ -52,10 +52,10 @@ export function NumberInput({ label, value, onChange, min, max, step = 0.5, plac
                 <input
                     type="number"
                     inputMode="decimal"
-                    value={value}
+                    value={value ?? ''}
                     onChange={e => {
                         const v = e.target.value
-                        onChange(v === '' ? '' : Number(v))
+                        onChange(v === '' ? null : Number(v))
                     }}
                     min={min}
                     max={max}

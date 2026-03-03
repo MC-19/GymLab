@@ -1,12 +1,23 @@
 // Core data types for GymLab
 
-export interface WorkoutSet {
+export interface LoggedSet {
     id: string
-    weight: number | ''
-    reps: number | ''
-    rir: number | ''
+    weight: number | null   // null = campo vacío
+    reps: number | null
+    rir: number | null
     notes?: string
-    completedAt?: string
+}
+
+/**
+ * Una semana de entrenamiento para un ejercicio concreto.
+ * weekNumber es asignado manualmente por el usuario (1, 2, 3…).
+ * Si el usuario salta una semana, simplemente no crea esta entidad.
+ */
+export interface TrainingWeek {
+    id: string
+    weekNumber: number
+    label?: string          // Opcional: "Descarga", "Pico", etc.
+    sets: LoggedSet[]
 }
 
 export interface Exercise {
@@ -14,7 +25,7 @@ export interface Exercise {
     name: string
     muscleGroup?: string
     notes?: string
-    sets: WorkoutSet[]
+    weeks: TrainingWeek[]   // Historial de semanas de este ejercicio
 }
 
 export interface WorkoutDay {
@@ -22,16 +33,7 @@ export interface WorkoutDay {
     name: string
     exercises: Exercise[]
     createdAt: string
-    lastPerformed?: string
     order: number
-}
-
-export interface WorkoutSession {
-    id: string
-    dayId: string
-    dayName: string
-    date: string
-    exercises: Exercise[]
 }
 
 export type ThemeMode = 'light' | 'dark' | 'system'
