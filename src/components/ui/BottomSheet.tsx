@@ -1,6 +1,7 @@
 import { useEffect, type ReactNode } from 'react'
 import { X } from 'lucide-react'
 import { IconButton } from './IconButton'
+import { useKeyboardHeight } from '../../hooks/useKeyboardHeight'
 
 interface BottomSheetProps {
     open: boolean
@@ -10,6 +11,8 @@ interface BottomSheetProps {
 }
 
 export function BottomSheet({ open, onClose, title, children }: BottomSheetProps) {
+    const keyboardHeight = useKeyboardHeight()
+
     useEffect(() => {
         if (!open) return
         const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
@@ -34,8 +37,11 @@ export function BottomSheet({ open, onClose, title, children }: BottomSheetProps
                 className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in"
                 onClick={onClose}
             />
-            {/* Sheet */}
-            <div className="relative w-full bg-white dark:bg-gray-900 rounded-t-3xl shadow-2xl animate-slide-up max-h-[92dvh] flex flex-col">
+            {/* Sheet — offset up by keyboard height so it stays above the keyboard */}
+            <div
+                className="relative w-full bg-white dark:bg-gray-900 rounded-t-3xl shadow-2xl animate-slide-up max-h-[92dvh] flex flex-col transition-[bottom] duration-100"
+                style={{ marginBottom: keyboardHeight }}
+            >
                 {/* Handle */}
                 <div className="flex justify-center pt-3 pb-1 shrink-0">
                     <div className="w-10 h-1 rounded-full bg-gray-300 dark:bg-gray-700" />
