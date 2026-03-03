@@ -18,7 +18,9 @@ export function Input({ label, error, className = '', ...props }: InputProps) {
                     'w-full bg-gray-100 dark:bg-white/8 rounded-2xl px-4 py-3',
                     'text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600',
                     'border border-transparent focus:border-blue-500 focus:outline-none',
-                    'transition-all duration-150 text-sm',
+                    'transition-all duration-150',
+                    // text-base = 16px: prevents iOS/Android auto-zoom on focus
+                    'text-base',
                     error ? 'border-red-500' : '',
                     className,
                 ].join(' ')}
@@ -61,7 +63,8 @@ export function NumberInput({ label, value, onChange, min, max, step = 0.5, plac
                     placeholder={placeholder ?? '—'}
                     className={[
                         'w-full bg-gray-100 dark:bg-white/8 rounded-2xl text-center',
-                        'text-gray-900 dark:text-white placeholder-gray-500 font-semibold text-lg',
+                        // text-base = 16px: prevents iOS/Android auto-zoom on focus
+                        'text-gray-900 dark:text-white placeholder-gray-500 font-semibold text-base',
                         'border border-transparent focus:border-blue-500 focus:outline-none',
                         'transition-all duration-150',
                         unit ? 'pt-3 pb-1 px-2' : 'py-3 px-2',

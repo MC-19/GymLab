@@ -25,13 +25,16 @@ export function Modal({ open, onClose, title, children }: ModalProps) {
 
     return (
         <div
-            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
+            className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto px-4 pt-[10dvh] pb-[env(safe-area-inset-bottom)]"
             onClick={e => { if (e.target === e.currentTarget) onClose() }}
         >
             {/* Backdrop */}
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" />
-            {/* Panel */}
-            <div className="relative w-full max-w-md bg-white dark:bg-gray-900 rounded-3xl shadow-2xl animate-bounce-in overflow-hidden flex flex-col max-h-[90dvh]">
+            <div
+                className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-fade-in"
+                onClick={onClose}
+            />
+            {/* Panel — takes natural height, doesn't resize on keyboard */}
+            <div className="relative w-full max-w-md bg-white dark:bg-gray-900 rounded-3xl shadow-2xl animate-bounce-in overflow-hidden mb-4">
                 {title && (
                     <div className="flex items-center justify-between px-6 pt-5 pb-3 border-b border-gray-100 dark:border-white/10 shrink-0">
                         <h2 className="text-base font-semibold text-gray-900 dark:text-white">{title}</h2>
@@ -40,7 +43,7 @@ export function Modal({ open, onClose, title, children }: ModalProps) {
                         </IconButton>
                     </div>
                 )}
-                <div className="px-6 py-5 overflow-y-auto pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+                <div className="px-6 py-5">
                     {children}
                 </div>
             </div>

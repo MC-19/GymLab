@@ -54,7 +54,7 @@ export function ExercisePage() {
     const isSetComplete = (s: WorkoutSet) => s.weight !== '' && s.reps !== ''
 
     return (
-        <div className="page-enter min-h-dvh flex flex-col">
+        <div className="page-enter">
             {/* Header */}
             <div className="sticky top-0 z-30 bg-white/80 dark:bg-black/80 backdrop-blur-xl border-b border-gray-100/60 dark:border-white/8">
                 <div className="flex items-center gap-3 px-4 h-14 max-w-lg mx-auto">
@@ -230,18 +230,7 @@ export function ExercisePage() {
                 )}
             </div>
 
-            {/* Bottom floating add button */}
-            {exercise.sets.length > 0 && (
-                <div className="sticky bottom-24 flex justify-end px-5 pb-2 max-w-lg mx-auto w-full">
-                    <button
-                        onClick={handleAddSet}
-                        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-5 py-3 rounded-2xl shadow-lg shadow-blue-900/40 font-medium text-sm transition-all active:scale-95"
-                    >
-                        <Plus size={18} />
-                        Nueva serie
-                    </button>
-                </div>
-            )}
+
         </div>
     )
 }
