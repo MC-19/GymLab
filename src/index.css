@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
+/* ====================================================
+   CRITICAL: TailwindCSS v4 class-based dark mode
+   Without this, dark: utilities produce no CSS at all
+   when toggling the .dark class on <html>
+   ==================================================== */
+@custom-variant dark (&:is(.dark *));
+
 @theme {
   --font-sans: 'Inter', system-ui, sans-serif;
 
@@ -13,11 +20,6 @@
   --color-success: #22c55e;
 }
 
-/* Dark mode - applied when html has class="dark" */
-:root {
-  color-scheme: light dark;
-}
-
 html {
   font-family: 'Inter', system-ui, sans-serif;
   -webkit-tap-highlight-color: transparent;
@@ -27,7 +29,7 @@ html {
 /* Scrollbar */
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
+::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }
 .dark ::-webkit-scrollbar-thumb { background: #4b5563; }
 
 /* Safe area */

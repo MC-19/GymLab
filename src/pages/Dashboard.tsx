@@ -82,10 +82,10 @@ export function Dashboard() {
                         {days.map((day, i) => (
                             <div
                                 key={day.id}
-                                className="group relative bg-gray-50 dark:bg-white/5 border border-gray-200/80 dark:border-white/10 rounded-3xl overflow-hidden hover:border-blue-500/40 dark:hover:border-blue-500/30 transition-all duration-200"
+                                className="bg-gray-50 dark:bg-white/5 border border-gray-200/80 dark:border-white/10 rounded-3xl overflow-hidden hover:border-blue-500/40 dark:hover:border-blue-500/30 transition-all duration-200"
                             >
                                 <button
-                                    className="w-full text-left px-5 py-4"
+                                    className="w-full text-left px-5 pt-4 pb-3"
                                     onClick={() => navigate(`/day/${day.id}`)}
                                 >
                                     <div className="flex items-start gap-3">
@@ -96,7 +96,7 @@ export function Dashboard() {
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-2 justify-between">
                                                 <h3 className="font-semibold text-gray-900 dark:text-white truncate">{day.name}</h3>
-                                                <ChevronRight size={16} className="text-gray-400 dark:text-gray-600 shrink-0 group-hover:text-blue-500 transition-colors" />
+                                                <ChevronRight size={16} className="text-gray-400 dark:text-gray-600 shrink-0" />
                                             </div>
                                             <div className="flex items-center gap-3 mt-1.5 flex-wrap">
                                                 <Badge variant="blue">
@@ -112,8 +112,8 @@ export function Dashboard() {
                                         </div>
                                     </div>
                                 </button>
-                                {/* Actions */}
-                                <div className="absolute top-3 right-12 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+                                {/* Actions — always visible for touch devices */}
+                                <div className="flex items-center justify-end gap-1 px-3 pb-3 border-t border-gray-100/80 dark:border-white/5 pt-2">
                                     <IconButton
                                         onClick={() => handleDuplicate(day.id)}
                                         variant="ghost"

@@ -156,17 +156,17 @@ export function WorkoutDayPage() {
                             return (
                                 <div
                                     key={ex.id}
-                                    className="group bg-gray-50 dark:bg-white/5 border border-gray-200/80 dark:border-white/10 rounded-3xl hover:border-blue-500/30 dark:hover:border-blue-500/20 transition-all duration-200"
+                                    className="bg-gray-50 dark:bg-white/5 border border-gray-200/80 dark:border-white/10 rounded-3xl hover:border-blue-500/30 dark:hover:border-blue-500/20 transition-all duration-200"
                                 >
                                     <button
-                                        className="w-full text-left px-5 py-4"
+                                        className="w-full text-left px-5 pt-4 pb-3"
                                         onClick={() => navigate(`/day/${day.id}/exercise/${ex.id}`)}
                                     >
                                         <div className="flex items-center gap-3">
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex items-center gap-2">
                                                     <span className="font-semibold text-gray-900 dark:text-white truncate">{ex.name}</span>
-                                                    <ChevronRight size={14} className="text-gray-400 shrink-0 group-hover:text-blue-500 transition-colors" />
+                                                    <ChevronRight size={14} className="text-gray-400 shrink-0" />
                                                 </div>
                                                 <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                                                     {ex.muscleGroup && <Badge variant="gold">{ex.muscleGroup}</Badge>}
@@ -182,8 +182,8 @@ export function WorkoutDayPage() {
                                             </div>
                                         </div>
                                     </button>
-                                    {/* Actions */}
-                                    <div className="flex justify-end gap-1 px-3 pb-3">
+                                    {/* Actions — always visible for touch devices */}
+                                    <div className="flex justify-end gap-1 px-3 pb-3 border-t border-gray-100/80 dark:border-white/5 pt-2">
                                         <IconButton onClick={() => openEdit(ex)} variant="ghost" size="sm">
                                             <Pencil size={14} />
                                         </IconButton>

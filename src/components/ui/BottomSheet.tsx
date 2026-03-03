@@ -48,9 +48,9 @@ export function BottomSheet({ open, onClose, title, children }: BottomSheetProps
                         </IconButton>
                     </div>
                 )}
-                <div className="overflow-y-auto px-6 py-4 flex-1">{children}</div>
-                {/* Safe area */}
-                <div className="h-[env(safe-area-inset-bottom)] shrink-0" />
+                <div className="overflow-y-auto px-6 py-4 flex-1 pb-[max(1rem,env(safe-area-inset-bottom))]">
+                    {children}
+                </div>
             </div>
         </div>
     )
