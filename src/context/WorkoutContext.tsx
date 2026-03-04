@@ -24,6 +24,8 @@ interface WorkoutContextType {
     addWeek: (dayId: string, exerciseId: string) => TrainingWeek
     deleteWeek: (dayId: string, exerciseId: string, weekId: string) => void
     updateWeekLabel: (dayId: string, exerciseId: string, weekId: string, label: string) => void
+    addWeekFromPrevious: (dayId: string, exerciseId: string) => { week: TrainingWeek; shouldSuggestIncrease: boolean }
+    applyWeightIncrement: (dayId: string, exerciseId: string, weekId: string, increment: number) => void
     // Sets
     addSet: (dayId: string, exerciseId: string, weekId: string) => LoggedSet
     updateSet: (dayId: string, exerciseId: string, weekId: string, setId: string, updates: Partial<LoggedSet>) => void

@@ -1,18 +1,23 @@
+import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Plus, ChevronLeft, Trash2, Dumbbell, TrendingUp, ChevronRight, BarChart2 } from 'lucide-react'
+import { Plus, ChevronLeft, Trash2, Dumbbell, TrendingUp, ChevronRight, BarChart2, Zap } from 'lucide-react'
 import { useWorkoutContext } from '../context/WorkoutContext'
 import { Button } from '../components/ui/Button'
 import { IconButton } from '../components/ui/IconButton'
 import { EmptyState } from '../components/ui/EmptyState'
 import { Badge } from '../components/ui/Badge'
 import { ThemeToggle } from '../components/ui/ThemeToggle'
+import { BottomSheet } from '../components/ui/BottomSheet'
 import { calcTotalVolume, getCompletedSets, getExerciseProgress } from '../utils/helpers'
 import type { TrainingWeek } from '../types'
 
 export function ExercisePage() {
     const { dayId, exerciseId } = useParams<{ dayId: string; exerciseId: string }>()
     const navigate = useNavigate()
-    const { days, addWeek, deleteWeek, showToast } = useWorkoutContext()
+    const { days, addWeekFromPrevious, applyWeightIncrement, deleteWeek, showToast } = useWorkoutContext()
+
+    // Estado para el modal de sugerencia de sobrecarga
+    const [pendingWeek, setPendingWeek] = useState<TrainingWeek | null>(null)
 
     const day = days.find(d => d.id === dayId)
     const exercise = day?.exercises.find(e => e.id === exerciseId)
@@ -31,10 +36,26 @@ export function ExercisePage() {
     const sortedWeeks = [...exercise.weeks].sort((a, b) => b.weekNumber - a.weekNumber)
 
     const handleAddWeek = () => {
-        const newWeek = addWeek(day.id, exercise.id)
-        showToast(`Semana ${newWeek.weekNumber} creada`, 'success')
-        // Navegar directamente a la nueva semana
-        navigate(`/day/${day.id}/exercise/${exercise.id}/week/${newWeek.id}`)
+        const { week, shouldSuggestIncrease } = addWeekFromPrevious(day.id, exercise.id)
+        showToast(`Semana ${week.weekNumber} creada`, 'success')
+
+        if (shouldSuggestIncrease) {
+            // Mostrar modal de sugerencia antes de navegar
+            setPendingWeek(week)
+        } else {
+            // Si no hay sugerencia, ir directo a la semana
+            navigate(`/day/${day.id}/exercise/${exercise.id}/week/${week.id}`)
+        }
+    }
+
+    const handleApplyIncrement = (increment: number) => {
+        if (!pendingWeek) return
+        if (increment > 0) {
+            applyWeightIncrement(day.id, exercise.id, pendingWeek.id, increment)
+        }
+        const weekToNavigate = pendingWeek
+        setPendingWeek(null)
+        navigate(`/day/${day.id}/exercise/${exercise.id}/week/${weekToNavigate.id}`)
     }
 
     const handleDeleteWeek = (week: TrainingWeek, e: React.MouseEvent) => {
@@ -42,6 +63,16 @@ export function ExercisePage() {
         deleteWeek(day.id, exercise.id, week.id)
         showToast(`Semana ${week.weekNumber} eliminada`, 'info')
     }
+
+    // Semana anterior a la pendiente (para mostrar el peso de referencia en el modal)
+    const prevWeek = pendingWeek
+        ? exercise.weeks
+            .filter(w => w.weekNumber < pendingWeek.weekNumber)
+            .sort((a, b) => b.weekNumber - a.weekNumber)[0]
+        : null
+    const prevMaxWeight = prevWeek
+        ? Math.max(...prevWeek.sets.filter(s => s.weight !== null).map(s => s.weight!), 0)
+        : 0
 
     return (
         <div className="page-enter">
@@ -63,7 +94,7 @@ export function ExercisePage() {
 
             <div className="flex-1 px-5 pt-5 pb-8 max-w-lg mx-auto w-full space-y-4">
 
-                {/* Gráfica de progresión (solo si hay ≥2 semanas con datos) */}
+                {/* Gráfica de progresión */}
                 {progress.filter(p => p.maxWeight > 0).length >= 2 && (
                     <div className="bg-gray-50 dark:bg-white/5 rounded-3xl px-5 py-4 border border-gray-200/60 dark:border-white/8">
                         <div className="flex items-center gap-2 mb-3">
@@ -133,14 +164,11 @@ export function ExercisePage() {
                                     ].join(' ')}
                                     onClick={() => navigate(`/day/${day.id}/exercise/${exercise.id}/week/${week.id}`)}
                                 >
-                                    {/* Número de semana */}
                                     <div className={`w-9 h-9 rounded-2xl flex items-center justify-center shrink-0 ${isFullyDone ? 'bg-blue-500/20 dark:bg-blue-500/25' : 'bg-blue-600/10 dark:bg-blue-500/15'}`}>
                                         <span className="text-sm font-bold text-blue-600 dark:text-blue-400">
                                             {week.weekNumber}
                                         </span>
                                     </div>
-
-                                    {/* Info */}
                                     <div className="flex-1 min-w-0">
                                         <p className="text-sm font-semibold text-gray-900 dark:text-white">
                                             {week.label ?? `Semana ${week.weekNumber}`}
@@ -163,8 +191,6 @@ export function ExercisePage() {
                                             )}
                                         </div>
                                     </div>
-
-                                    {/* Acciones */}
                                     <div className="flex items-center gap-1 shrink-0">
                                         <IconButton
                                             onClick={e => handleDeleteWeek(week, e)}
@@ -190,6 +216,60 @@ export function ExercisePage() {
                     </div>
                 )}
             </div>
+
+            {/* Modal de sugerencia de sobrecarga progresiva */}
+            <BottomSheet
+                open={pendingWeek !== null}
+                onClose={() => handleApplyIncrement(0)}
+                title="¿Subes peso esta semana?"
+            >
+                <div className="space-y-4">
+                    {/* Contexto */}
+                    <div className="flex items-start gap-3 p-4 rounded-2xl bg-green-50 dark:bg-green-500/8 border border-green-200/60 dark:border-green-500/20">
+                        <Zap size={16} className="text-green-600 dark:text-green-400 mt-0.5 shrink-0" />
+                        <div>
+                            <p className="text-sm font-semibold text-green-800 dark:text-green-300">
+                                Semana anterior completada con RIR ≤ 1
+                            </p>
+                            <p className="text-xs text-green-700 dark:text-green-400 mt-0.5">
+                                Estabas cerca del fallo. Puedes subir el peso esta semana.
+                                {prevMaxWeight > 0 && (
+                                    <> Tu máximo fue <strong>{prevMaxWeight} kg</strong>.</>
+                                )}
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Opciones de incremento */}
+                    <div className="grid grid-cols-3 gap-2">
+                        <button
+                            onClick={() => handleApplyIncrement(2.5)}
+                            className="flex flex-col items-center gap-1 py-4 rounded-2xl bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 transition-colors"
+                        >
+                            <span className="text-lg font-bold">+2.5</span>
+                            <span className="text-xs opacity-80">kg</span>
+                        </button>
+                        <button
+                            onClick={() => handleApplyIncrement(5)}
+                            className="flex flex-col items-center gap-1 py-4 rounded-2xl bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 transition-colors"
+                        >
+                            <span className="text-lg font-bold">+5</span>
+                            <span className="text-xs opacity-80">kg</span>
+                        </button>
+                        <button
+                            onClick={() => handleApplyIncrement(0)}
+                            className="flex flex-col items-center gap-1 py-4 rounded-2xl bg-gray-100 dark:bg-white/8 text-gray-700 dark:text-gray-300 font-semibold text-sm hover:bg-gray-200 dark:hover:bg-white/12 transition-colors"
+                        >
+                            <span className="text-lg font-bold">=</span>
+                            <span className="text-xs opacity-70">igual</span>
+                        </button>
+                    </div>
+
+                    <p className="text-xs text-center text-gray-500 dark:text-gray-600">
+                        Podrás editarlo manualmente una vez dentro de la semana
+                    </p>
+                </div>
+            </BottomSheet>
         </div>
     )
 }

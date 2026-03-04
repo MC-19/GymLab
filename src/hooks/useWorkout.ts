@@ -187,6 +187,75 @@ export function useWorkout() {
         [updateExerciseInDay]
     )
 
+    /**
+     * Crea una nueva semana copiando los sets de la semana más reciente.
+     * Devuelve la nueva semana y si se debe sugerir incremento de peso
+     * (= todas las series completadas de la semana anterior tuvieron RIR ≤ 1).
+     */
+    const addWeekFromPrevious = useCallback(
+        (dayId: string, exerciseId: string): { week: TrainingWeek; shouldSuggestIncrease: boolean } => {
+            let newWeek!: TrainingWeek
+            let shouldSuggestIncrease = false
+
+            updateExerciseInDay(dayId, exerciseId, ex => {
+                // Semana más reciente (mayor weekNumber)
+                const lastWeek = ex.weeks.length > 0
+                    ? [...ex.weeks].sort((a, b) => b.weekNumber - a.weekNumber)[0]
+                    : null
+
+                const nextNumber = lastWeek ? lastWeek.weekNumber + 1 : 1
+
+                // Copiar sets con solo el peso de referencia — reps y RIR en blanco
+                const copiedSets: LoggedSet[] = lastWeek
+                    ? lastWeek.sets.map(s => ({ id: generateId(), weight: s.weight, reps: null, rir: null }))
+                    : []
+
+                // Sugerir subida si el promedio de RIR (sets con RIR rellenado) es ≤ 2
+                if (lastWeek) {
+                    const completedSets = lastWeek.sets.filter(s => s.weight !== null && s.reps !== null)
+                    const setsWithRir = completedSets.filter(s => s.rir !== null)
+                    const avgRir = setsWithRir.length > 0
+                        ? setsWithRir.reduce((sum, s) => sum + s.rir!, 0) / setsWithRir.length
+                        : null
+                    shouldSuggestIncrease =
+                        completedSets.length > 0 &&
+                        // Sin datos de RIR → sugerir por defecto
+                        // Con datos de RIR → sugerir solo si promedio ≤ 2
+                        (avgRir === null || avgRir <= 2)
+                }
+
+                newWeek = { id: generateId(), weekNumber: nextNumber, sets: copiedSets }
+                return { ...ex, weeks: [...ex.weeks, newWeek] }
+            })
+
+            return { week: newWeek, shouldSuggestIncrease }
+        },
+        [updateExerciseInDay]
+    )
+
+    /**
+     * Añade `increment` kg al peso de todos los sets que tengan peso definido
+     * en la semana indicada. Usado tras la sugerencia de sobrecarga progresiva.
+     */
+    const applyWeightIncrement = useCallback(
+        (dayId: string, exerciseId: string, weekId: string, increment: number) => {
+            updateExerciseInDay(dayId, exerciseId, ex => ({
+                ...ex,
+                weeks: ex.weeks.map(w =>
+                    w.id !== weekId ? w : {
+                        ...w,
+                        sets: w.sets.map(s =>
+                            s.weight !== null
+                                ? { ...s, weight: Math.round((s.weight + increment) * 100) / 100 }
+                                : s
+                        ),
+                    }
+                ),
+            }))
+        },
+        [updateExerciseInDay]
+    )
+
     // ── Sets ──────────────────────────────────────────────────────────────────
 
     const addSet = useCallback((dayId: string, exerciseId: string, weekId: string) => {
@@ -232,7 +301,7 @@ export function useWorkout() {
         days,
         addDay, updateDay, deleteDay, reorderDays, duplicateDay,
         addExercise, updateExercise, deleteExercise, reorderExercises,
-        addWeek, deleteWeek, updateWeekLabel,
+        addWeek, deleteWeek, updateWeekLabel, addWeekFromPrevious, applyWeightIncrement,
         addSet, updateSet, deleteSet,
     }
 }
