@@ -47,7 +47,7 @@ export function Dashboard() {
                     <img
                         src="/icons/icon-512.png"
                         alt="GymLab"
-                        className="h-8 w-auto object-contain"
+                        className="h-30 w-auto object-contain"
                     />
                     <ThemeToggle />
                 </div>
