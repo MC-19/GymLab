@@ -44,12 +44,11 @@ export function Dashboard() {
             {/* Header */}
             <div className="sticky top-0 z-30 bg-white/80 dark:bg-black/80 backdrop-blur-xl border-b border-gray-100/60 dark:border-white/8">
                 <div className="flex items-center justify-between px-5 h-14 max-w-lg mx-auto">
-                    <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-xl bg-blue-600 flex items-center justify-center">
-                            <Dumbbell size={14} className="text-white" />
-                        </div>
-                        <h1 className="text-base font-bold text-gray-900 dark:text-white tracking-tight">GymLab</h1>
-                    </div>
+                    <img
+                        src="/icons/icon-512.png"
+                        alt="GymLab"
+                        className="h-8 w-auto object-contain"
+                    />
                     <ThemeToggle />
                 </div>
             </div>
