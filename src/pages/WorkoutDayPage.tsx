@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Plus, ChevronLeft, Trash2, Pencil, ChevronRight, Dumbbell } from 'lucide-react'
+import { Plus, ChevronLeft, Trash2, Pencil, ChevronRight, Dumbbell, CheckCircle2, ArrowUp, ArrowDown } from 'lucide-react'
 import { useWorkoutContext } from '../context/WorkoutContext'
 import { Button } from '../components/ui/Button'
 import { IconButton } from '../components/ui/IconButton'
@@ -17,7 +17,7 @@ import type { Exercise } from '../types'
 export function WorkoutDayPage() {
     const { dayId } = useParams<{ dayId: string }>()
     const navigate = useNavigate()
-    const { days, updateDay, deleteExercise, addExercise, updateExercise, showToast } = useWorkoutContext()
+    const { days, updateDay, deleteExercise, addExercise, updateExercise, reorderExercises, showToast, completeSession, currentDayIndex } = useWorkoutContext()
 
     const day = days.find(d => d.id === dayId)
 
@@ -77,6 +77,17 @@ export function WorkoutDayPage() {
         if (name) updateDay(day.id, { name })
         setEditDayName(false)
         showToast('Nombre actualizado', 'success')
+    }
+
+    const moveExercise = (exId: string, direction: 'up' | 'down') => {
+        if (!day) return
+        const ids = day.exercises.map(e => e.id)
+        const idx = ids.indexOf(exId)
+        if (direction === 'up' && idx <= 0) return
+        if (direction === 'down' && idx >= ids.length - 1) return
+        const swapWith = direction === 'up' ? idx - 1 : idx + 1
+            ;[ids[idx], ids[swapWith]] = [ids[swapWith], ids[idx]]
+        reorderExercises(day.id, ids)
     }
 
     return (
@@ -183,8 +194,30 @@ export function WorkoutDayPage() {
                                             </div>
                                         </div>
                                     </button>
-                                    {/* Actions — always visible for touch devices */}
-                                    <div className="flex justify-end gap-1 px-3 pb-3 border-t border-gray-100/80 dark:border-white/5 pt-2">
+                                    {/* Actions */}
+                                    <div className={[
+                                        'flex items-center gap-1 px-3 pb-3 border-t pt-2',
+                                        'border-gray-100/80 dark:border-white/5',
+                                    ].join(' ')}>
+                                        {/* Reorder */}
+                                        <div className="flex gap-0.5 mr-auto">
+                                            <IconButton
+                                                onClick={() => moveExercise(ex.id, 'up')}
+                                                variant="ghost"
+                                                size="sm"
+                                                title="Subir"
+                                            >
+                                                <ArrowUp size={13} />
+                                            </IconButton>
+                                            <IconButton
+                                                onClick={() => moveExercise(ex.id, 'down')}
+                                                variant="ghost"
+                                                size="sm"
+                                                title="Bajar"
+                                            >
+                                                <ArrowDown size={13} />
+                                            </IconButton>
+                                        </div>
                                         <IconButton onClick={() => openEdit(ex)} variant="ghost" size="sm">
                                             <Pencil size={14} />
                                         </IconButton>
@@ -195,6 +228,26 @@ export function WorkoutDayPage() {
                                 </div>
                             )
                         })}
+
+                        {/* Finalizar entrenamiento */}
+                        <button
+                            onClick={() => {
+                                const nextIndex = (currentDayIndex + 1) % days.length
+                                const nextDay = days[nextIndex]
+                                completeSession(day.id, days.length)
+                                showToast(
+                                    days.length > 1
+                                        ? `¡Completado! Siguiente: ${nextDay?.name}`
+                                        : '¡Entrenamiento completado!',
+                                    'success'
+                                )
+                                navigate('/')
+                            }}
+                            className="w-full flex items-center justify-center gap-2 py-4 mt-1 rounded-3xl bg-blue-600 dark:bg-blue-500 text-white font-semibold text-sm hover:bg-blue-700 dark:hover:bg-blue-600 active:scale-[0.98] transition-all duration-150 shadow-md shadow-blue-600/25"
+                        >
+                            <CheckCircle2 size={18} />
+                            Finalizar entrenamiento
+                        </button>
 
                         {/* Add exercise button */}
                         <button

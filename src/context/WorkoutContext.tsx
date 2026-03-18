@@ -1,8 +1,9 @@
 import { createContext, useContext, type ReactNode } from 'react'
 import { useWorkout } from '../hooks/useWorkout'
+import { useRotation } from '../hooks/useRotation'
 import { useToast } from '../hooks/useToast'
 import type { Toast } from '../hooks/useToast'
-import type { WorkoutDay, Exercise, TrainingWeek, LoggedSet } from '../types'
+import type { WorkoutDay, Exercise, TrainingWeek, LoggedSet, CompletedSession } from '../types'
 
 interface WorkoutContextType {
     days: WorkoutDay[]
@@ -30,16 +31,25 @@ interface WorkoutContextType {
     addSet: (dayId: string, exerciseId: string, weekId: string) => LoggedSet
     updateSet: (dayId: string, exerciseId: string, weekId: string, setId: string, updates: Partial<LoggedSet>) => void
     deleteSet: (dayId: string, exerciseId: string, weekId: string, setId: string) => void
+    // Rotation
+    currentDayIndex: number
+    sessions: CompletedSession[]
+    getCurrentDay: (days: WorkoutDay[]) => WorkoutDay | null
+    completeSession: (dayId: string, totalDays: number) => void
+    getRecentSessions: (days?: number) => CompletedSession[]
+    resetRotation: () => void
+    setCurrentDayIndex: (index: number) => void
 }
 
 const WorkoutContext = createContext<WorkoutContextType | null>(null)
 
 export function WorkoutProvider({ children }: { children: ReactNode }) {
     const workout = useWorkout()
+    const rotation = useRotation()
     const { toasts, showToast, removeToast } = useToast()
 
     return (
-        <WorkoutContext.Provider value={{ ...workout, toasts, showToast, removeToast }}>
+        <WorkoutContext.Provider value={{ ...workout, ...rotation, toasts, showToast, removeToast }}>
             {children}
         </WorkoutContext.Provider>
     )

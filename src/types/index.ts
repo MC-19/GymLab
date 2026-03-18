@@ -41,3 +41,16 @@ export type ThemeMode = 'light' | 'dark' | 'system'
 export interface AppSettings {
     theme: ThemeMode
 }
+
+/** Registro de una sesión de entrenamiento completada */
+export interface CompletedSession {
+    id: string
+    dayId: string          // qué día de la rotación se entrenó
+    completedAt: string    // ISO timestamp
+}
+
+/** Estado global de la rotación (separado de las plantillas de días) */
+export interface WorkoutState {
+    currentDayIndex: number        // índice en days[] que toca ahora
+    sessions: CompletedSession[]   // historial completo de sesiones
+}
