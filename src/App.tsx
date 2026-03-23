@@ -9,10 +9,12 @@ import { SettingsPage } from './pages/SettingsPage'
 import { RoutinesPage } from './pages/RoutinesPage'
 import { BodyWeightPage } from './features/bodyweight/components/BodyWeightPage'
 import { TimerWidget } from './components/ui/TimerWidget'
+import { PwaReloadPrompt } from './components/ui/PwaReloadPrompt'
 
 export default function App() {
   return (
     <AppShell>
+      <PwaReloadPrompt />
       <TimerWidget />
       <Routes>
         <Route path="/" element={<Dashboard />} />
