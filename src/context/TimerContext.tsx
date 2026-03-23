@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import { useLocalStorage } from '../hooks/useLocalStorage'
 import { useToast } from '../hooks/useToast'
+import { useAudioBeep } from '../hooks/useAudioBeep'
 
 export interface TimerState {
     isActive: boolean
@@ -21,6 +22,7 @@ const TimerContext = createContext<TimerContextType | null>(null)
 export function TimerProvider({ children }: { children: ReactNode }) {
     const [defaultRestTime, setDefaultRestTime] = useLocalStorage<number>('gymlab_default_rest', 180)
     const { showToast } = useToast()
+    const { playStartBeep, playFinishBeeps } = useAudioBeep()
 
     const [isActive, setIsActive] = useState(false)
     const [duration, setDuration] = useState(0)
@@ -69,6 +71,15 @@ export function TimerProvider({ children }: { children: ReactNode }) {
                     if ('vibrate' in navigator) {
                         navigator.vibrate([200, 100, 200, 100, 500])
                     }
+                    playFinishBeeps()
+
+                    if ('Notification' in window && Notification.permission === 'granted') {
+                        new Notification('⏱️ Descanso finalizado', {
+                            body: '¡A por la siguiente serie!',
+                            icon: '/icons/icon-192.png'
+                        })
+                    }
+
                     showToast('¡Tiempo de descanso finalizado!', 'success')
                 } else {
                     setTimeRemaining(remaining)
@@ -79,9 +90,10 @@ export function TimerProvider({ children }: { children: ReactNode }) {
         return () => {
             if (interval) clearInterval(interval)
         }
-    }, [isActive, endTime, showToast])
+    }, [isActive, endTime, showToast, playFinishBeeps])
 
     const startTimer = (seconds?: number) => {
+        playStartBeep()
         const timeToSet = seconds ?? defaultRestTime
         setDuration(timeToSet)
         setTimeRemaining(timeToSet)

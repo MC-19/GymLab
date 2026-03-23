@@ -3,6 +3,7 @@ import { Sun, Moon, Monitor, Trash2, Info, Download, Upload, FileJson, AlertTria
 import { useTheme } from '../hooks/useTheme'
 import { useWorkoutContext } from '../context/WorkoutContext'
 import { useTimer } from '../context/TimerContext'
+import { useAudioBeep } from '../hooks/useAudioBeep'
 import { Button } from '../components/ui/Button'
 import { Modal } from '../components/ui/Modal'
 import type { ThemeMode } from '../types'
@@ -22,6 +23,26 @@ export function SettingsPage() {
     const [importedData, setImportedData] = useState<string | null>(null)
     const [importFileName, setImportFileName] = useState('')
     const fileInputRef = useRef<HTMLInputElement>(null)
+    const { playStartBeep } = useAudioBeep()
+
+    const [permission, setPermission] = useState<NotificationPermission>(
+        'Notification' in window ? Notification.permission : 'denied'
+    )
+
+    const requestNotificationPermission = async () => {
+        if (!('Notification' in window)) {
+            showToast('Tu navegador no soporta notificaciones', 'error')
+            return
+        }
+        const result = await Notification.requestPermission()
+        setPermission(result)
+        if (result === 'granted') {
+            showToast('Avisos activados', 'success')
+            playStartBeep()
+        } else if (result === 'denied') {
+            showToast('Permiso denegado', 'error')
+        }
+    }
 
     const totalExercises = days.reduce((sum, d) => sum + d.exercises.length, 0)
     const totalWeeks = days.reduce((sum, d) => sum + d.exercises.reduce((es, e) => es + e.weeks.length, 0), 0)
@@ -146,6 +167,20 @@ export function SettingsPage() {
                             <option value={150}>2:30 min</option>
                             <option value={180}>3 min</option>
                         </select>
+                    </div>
+
+                    <div className="bg-gray-50 dark:bg-white/5 border border-gray-200/60 dark:border-white/8 rounded-3xl p-4 flex items-center justify-between mt-3">
+                        <div>
+                            <p className="text-sm font-semibold text-gray-900 dark:text-white">Avisos de descanso</p>
+                            <p className="text-xs text-gray-500 mt-0.5">Notificaciones y sonido final</p>
+                        </div>
+                        {permission === 'granted' ? (
+                            <span className="text-sm font-bold text-green-600 dark:text-green-400 bg-green-500/10 px-3 py-1 rounded-lg">Activado</span>
+                        ) : permission === 'denied' ? (
+                            <span className="text-sm font-bold text-red-600 dark:text-red-400 bg-red-500/10 px-3 py-1 rounded-lg">Bloqueado</span>
+                        ) : (
+                            <Button size="sm" onClick={requestNotificationPermission}>Activar</Button>
+                        )}
                     </div>
                 </Section>
 
