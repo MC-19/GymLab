@@ -36,6 +36,13 @@ export interface WorkoutDay {
     order: number
 }
 
+/** Entrada de peso corporal registrada por el usuario */
+export interface BodyWeightEntry {
+    id: string
+    date: string        // YYYY-MM-DD
+    weight: number      // kg
+}
+
 export type ThemeMode = 'light' | 'dark' | 'system'
 
 export interface AppSettings {

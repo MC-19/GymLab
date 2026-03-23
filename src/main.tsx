@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import { WorkoutProvider } from './context/WorkoutContext'
+import { TimerProvider } from './context/TimerContext'
 import App from './App'
 import './index.css'
 
@@ -18,7 +19,9 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>
       <WorkoutProvider>
-        <App />
+        <TimerProvider>
+          <App />
+        </TimerProvider>
       </WorkoutProvider>
     </BrowserRouter>
   </StrictMode>

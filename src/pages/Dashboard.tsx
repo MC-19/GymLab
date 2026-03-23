@@ -1,8 +1,11 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { CalendarDays, ChevronRight, ListChecks } from 'lucide-react'
+import { CalendarDays, ChevronRight, ListChecks, Shuffle } from 'lucide-react'
 import { useWorkoutContext } from '../context/WorkoutContext'
 import { ThemeToggle } from '../components/ui/ThemeToggle'
 import { OnboardingCard } from '../components/ui/OnboardingCard'
+import { calculateWeeklyStreak } from '../utils/helpers'
+import { useTimer } from '../context/TimerContext'
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -38,15 +41,22 @@ export function Dashboard() {
         addDay,
         getCurrentDay,
         currentDayIndex,
+        sessions,
         getRecentSessions,
+        setCurrentDayIndex,
+        showToast,
     } = useWorkoutContext()
+    const { setDefaultRestTime } = useTimer()
+
+    const [showDayPicker, setShowDayPicker] = useState(false)
 
     const DAY_LETTERS = ['A', 'B', 'C', 'D', 'E']
 
-    const handleOnboardingSelect = async (count: number) => {
+    const handleOnboardingSelect = async (count: number, defaultRest: number) => {
         for (let i = 0; i < count; i++) {
             addDay(`Día ${DAY_LETTERS[i]}`)
         }
+        setDefaultRestTime(defaultRest)
         navigate('/routines', { state: { fromOnboarding: true } })
     }
 
@@ -55,6 +65,7 @@ export function Dashboard() {
     const weekDays = getWeekDays()
     const today = new Date()
     const weeklyCount = recentSessions.length
+    const streak = calculateWeeklyStreak(sessions)
 
     // Map each calendar day to a session (if any)
     const sessionsByDay = weekDays.map(d => ({
@@ -90,18 +101,40 @@ export function Dashboard() {
                     <OnboardingCard onSelect={handleOnboardingSelect} />
                 ) : (
                     <>
+                        {/* Streak Banner */}
+                        {streak > 0 && (
+                            <div className="flex items-center justify-between bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-500/10 dark:to-red-500/10 border border-orange-200/60 dark:border-orange-500/20 px-4 py-3.5 rounded-3xl -mt-2 shadow-sm shadow-orange-500/5">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-9 h-9 rounded-full bg-orange-100 dark:bg-orange-500/20 flex items-center justify-center shrink-0">
+                                        <span className="text-lg leading-none">🔥</span>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-bold text-orange-800 dark:text-orange-400">
+                                            {streak} semana{streak > 1 ? 's' : ''} en racha
+                                        </p>
+                                        <p className="text-[11px] text-orange-600/80 dark:text-orange-400/80 font-medium tracking-wide">
+                                            ¡No rompas la cadena!
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                         {/* TODAY card */}
                         <div>
                             <button
                                 onClick={() => navigate(`/day/${currentDay!.id}`)}
-                                className="w-full text-left bg-blue-600 dark:bg-blue-500 rounded-3xl p-5 shadow-lg shadow-blue-600/20 dark:shadow-blue-500/20 hover:scale-[1.01] active:scale-[0.99] transition-transform duration-150"
+                                className="relative w-full text-left bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 dark:from-blue-500 dark:via-blue-600 dark:to-indigo-700 rounded-[2rem] p-6 shadow-xl shadow-blue-600/30 dark:shadow-blue-500/20 hover:scale-[1.02] active:scale-[0.98] transition-transform duration-300 overflow-hidden group border border-white/10"
                             >
-                                <div className="flex items-start justify-between gap-3">
+                                {/* Background glow / glass effect */}
+                                <div className="absolute top-0 right-0 -left-1/4 -bottom-1/4 bg-gradient-to-br from-white/10 to-transparent opacity-50 blur-2xl pointer-events-none" />
+
+                                <div className="relative flex items-start justify-between gap-3 z-10">
                                     <div className="flex-1 min-w-0">
-                                        <p className="text-xs font-bold text-blue-200 uppercase tracking-wider mb-1">
+                                        <p className="text-xs font-bold text-blue-200/90 uppercase tracking-[0.2em] mb-1">
                                             HOY TOCA
                                         </p>
-                                        <h2 className="text-2xl font-bold text-white truncate mb-2">
+                                        <h2 className="font-display text-3xl font-extrabold text-white truncate mb-2 tracking-tight group-hover:text-blue-50 transition-colors">
                                             {currentDay!.name}
                                         </h2>
                                         {currentDay!.exercises.length > 0 ? (
@@ -114,16 +147,25 @@ export function Dashboard() {
                                         )}
                                         {nextDay && (
                                             <div className="mt-3 pt-3 border-t border-blue-500/40">
-                                                <p className="text-xs text-blue-200">
-                                                    <span className="font-semibold">SIGUIENTE:</span> {nextDay.name}
+                                                <p className="text-[11px] font-medium text-blue-200/90">
+                                                    <span className="font-bold opacity-70 tracking-wider">SIGUIENTE:</span> {nextDay.name}
                                                 </p>
                                             </div>
                                         )}
                                     </div>
-                                    <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center shrink-0 mt-0.5">
-                                        <ChevronRight size={20} className="text-white" />
+                                    <div className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-md border border-white/10 flex items-center justify-center shrink-0 mt-2 group-hover:bg-white/20 transition-colors">
+                                        <ChevronRight size={22} className="text-white" />
                                     </div>
                                 </div>
+                            </button>
+
+                            {/* Cambiar día */}
+                            <button
+                                onClick={() => setShowDayPicker(true)}
+                                className="mt-2 w-full flex items-center justify-center gap-1.5 py-2.5 rounded-2xl text-xs font-medium text-gray-500 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-all duration-150"
+                            >
+                                <Shuffle size={13} />
+                                Cambiar el día de hoy
                             </button>
                         </div>
 
@@ -238,7 +280,7 @@ export function Dashboard() {
                                         >
                                             <div className="w-7 h-7 rounded-xl bg-gray-200/80 dark:bg-white/10 flex items-center justify-center shrink-0">
                                                 <span className="text-xs font-bold text-gray-500 dark:text-gray-400">
-                                                    +{i + 1}
+                                                    +{i + 2}
                                                 </span>
                                             </div>
                                             <span className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate flex-1">
@@ -267,6 +309,49 @@ export function Dashboard() {
                     </>
                 )}
             </div>
+
+            {/* Day picker sheet */}
+            {showDayPicker && (
+                <>
+                    <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={() => setShowDayPicker(false)} />
+                    <div className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-[#111] rounded-t-3xl border-t border-gray-200/60 dark:border-white/10 px-5 pt-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] max-w-lg mx-auto">
+                        <div className="w-10 h-1 rounded-full bg-gray-300 dark:bg-white/20 mx-auto mb-5" />
+                        <h2 className="text-base font-bold text-gray-900 dark:text-white mb-1">¿Qué entrenas hoy?</h2>
+                        <p className="text-xs text-gray-500 dark:text-gray-500 mb-4">La rotación continuará desde el día que elijas.</p>
+                        <div className="space-y-2">
+                            {days.map((day, i) => {
+                                const isSelected = i === currentDayIndex % days.length
+                                return (
+                                    <button
+                                        key={day.id}
+                                        onClick={() => {
+                                            setCurrentDayIndex(i)
+                                            showToast(`Hoy: ${day.name}`, 'success')
+                                            setShowDayPicker(false)
+                                        }}
+                                        className={[
+                                            'w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl border text-left transition-all',
+                                            isSelected
+                                                ? 'bg-blue-600 border-blue-600 text-white'
+                                                : 'bg-gray-50 dark:bg-white/5 border-gray-200/60 dark:border-white/10 hover:border-blue-500/40',
+                                        ].join(' ')}
+                                    >
+                                        <div className={`w-7 h-7 rounded-xl flex items-center justify-center text-xs font-bold shrink-0 ${isSelected ? 'bg-white/20 text-white' : 'bg-blue-500/15 text-blue-600 dark:text-blue-400'}`}>
+                                            {i + 1}
+                                        </div>
+                                        <span className={`font-medium text-sm ${isSelected ? 'text-white' : 'text-gray-900 dark:text-white'}`}>
+                                            {day.name}
+                                        </span>
+                                        {isSelected && (
+                                            <span className="ml-auto text-[10px] font-bold text-white/70 uppercase">Actual</span>
+                                        )}
+                                    </button>
+                                )
+                            })}
+                        </div>
+                    </div>
+                </>
+            )}
         </div>
     )
 }

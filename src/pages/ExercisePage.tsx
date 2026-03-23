@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Plus, ChevronLeft, Trash2, Dumbbell, TrendingUp, ChevronRight, BarChart2, Zap } from 'lucide-react'
+import { Plus, ChevronLeft, Trash2, Dumbbell, TrendingUp, ChevronRight, BarChart2, Zap, Play } from 'lucide-react'
 import { useWorkoutContext } from '../context/WorkoutContext'
 import { Button } from '../components/ui/Button'
 import { IconButton } from '../components/ui/IconButton'
@@ -34,6 +34,14 @@ export function ExercisePage() {
     const progress = getExerciseProgress(exercise)
     // Semanas ordenadas: la más reciente (mayor weekNumber) primero
     const sortedWeeks = [...exercise.weeks].sort((a, b) => b.weekNumber - a.weekNumber)
+
+    // Semana activa = la de mayor weekNumber (o null si no hay ninguna)
+    const latestWeek = sortedWeeks[0] ?? null
+    // Mostrar CTA "Entrenar hoy" si no hay semanas O si la última ya tiene todas las series completadas
+    const showStartCTA = latestWeek === null || (
+        latestWeek.sets.length > 0 &&
+        latestWeek.sets.every(s => s.weight !== null && s.reps !== null)
+    )
 
     const handleAddWeek = () => {
         const { week, shouldSuggestIncrease } = addWeekFromPrevious(day.id, exercise.id)
@@ -94,6 +102,17 @@ export function ExercisePage() {
 
             <div className="flex-1 px-5 pt-5 pb-8 max-w-lg mx-auto w-full space-y-4">
 
+                {/* ── CTA: Entrenar hoy ────────────────────────────────── */}
+                {showStartCTA && (
+                    <button
+                        onClick={handleAddWeek}
+                        className="w-full flex items-center justify-center gap-2.5 bg-blue-600 hover:bg-blue-500 active:scale-[0.98] text-white font-semibold rounded-2xl py-4 text-sm transition-all shadow-lg shadow-blue-600/25"
+                    >
+                        <Play size={16} className="fill-white" />
+                        {latestWeek === null ? 'Empezar primera semana' : 'Empezar nueva semana'}
+                    </button>
+                )}
+
                 {/* Gráfica de progresión */}
                 {progress.filter(p => p.maxWeight > 0).length >= 2 && (
                     <div className="bg-gray-50 dark:bg-white/5 rounded-3xl px-5 py-4 border border-gray-200/60 dark:border-white/8">
@@ -109,21 +128,25 @@ export function ExercisePage() {
                                 const heightPct = max > 0 ? (p.maxWeight / max) * 100 : 0
                                 const isLast = i === progress.length - 1
                                 return (
-                                    <div key={p.weekNumber} className="flex flex-col items-center gap-1 flex-1 min-w-0">
-                                        <div className="w-full flex items-end justify-center" style={{ height: '44px' }}>
+                                    <div key={p.weekNumber} className="relative flex flex-col items-center gap-1 flex-1 min-w-0 group">
+                                        {/* Glow for PR */}
+                                        {p.isPR && (
+                                            <div className="absolute inset-x-0 bottom-4 -top-2 bg-yellow-400/20 blur-md rounded-t-lg pointer-events-none" />
+                                        )}
+                                        <div className="w-full flex items-end justify-center z-10" style={{ height: '44px' }}>
                                             <div
-                                                className={`w-full rounded-t-lg transition-all duration-300 ${isLast ? 'bg-blue-500' : 'bg-blue-200 dark:bg-blue-500/30'}`}
+                                                className={`w-full rounded-t-lg transition-all duration-300 ${p.isPR ? 'bg-gradient-to-t from-yellow-500 to-yellow-400 shadow-sm shadow-yellow-500/50' : isLast ? 'bg-gradient-to-t from-blue-600 to-blue-500 shadow-sm shadow-blue-500/40' : 'bg-blue-200 dark:bg-blue-500/30'}`}
                                                 style={{ height: `${Math.max(heightPct, 8)}%` }}
                                             />
                                         </div>
-                                        <span className="text-[9px] text-gray-400 truncate w-full text-center">{p.label}</span>
+                                        <span className={`font-display text-[10px] truncate w-full text-center ${p.isPR ? 'text-yellow-600 dark:text-yellow-500 font-bold' : 'text-gray-400 font-medium'}`}>{p.label}</span>
                                     </div>
                                 )
                             })}
                         </div>
-                        <div className="flex justify-between mt-2">
-                            <span className="text-xs text-gray-500">S1: {progress[0]?.maxWeight ?? 0} kg</span>
-                            <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">
+                        <div className="flex justify-between mt-3 px-1">
+                            <span className="font-display text-xs text-gray-500 font-medium tracking-wide">S1: {progress[0]?.maxWeight ?? 0} kg</span>
+                            <span className="font-display text-xs font-bold text-blue-600 dark:text-blue-400 tracking-wide">
                                 Actual: {progress.at(-1)?.maxWeight ?? 0} kg
                             </span>
                         </div>
@@ -151,6 +174,7 @@ export function ExercisePage() {
                             const maxWeight = allSets.filter(s => s.weight !== null).length > 0
                                 ? Math.max(...allSets.filter(s => s.weight !== null).map(s => s.weight!))
                                 : 0
+                            const isPR = progress.find(p => p.weekNumber === week.weekNumber)?.isPR
                             const isFullyDone = allSets.length > 0 && completed === allSets.length
 
                             return (
@@ -164,13 +188,13 @@ export function ExercisePage() {
                                     ].join(' ')}
                                     onClick={() => navigate(`/day/${day.id}/exercise/${exercise.id}/week/${week.id}`)}
                                 >
-                                    <div className={`w-9 h-9 rounded-2xl flex items-center justify-center shrink-0 ${isFullyDone ? 'bg-blue-500/20 dark:bg-blue-500/25' : 'bg-blue-600/10 dark:bg-blue-500/15'}`}>
-                                        <span className="text-sm font-bold text-blue-600 dark:text-blue-400">
+                                    <div className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0 ${isFullyDone ? 'bg-gradient-to-br from-blue-500 to-blue-600 shadow-md shadow-blue-500/20 text-white' : 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400'}`}>
+                                        <span className="font-display text-lg font-bold">
                                             {week.weekNumber}
                                         </span>
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                                        <p className="font-display text-base font-bold text-gray-900 dark:text-white mb-1">
                                             {week.label ?? `Semana ${week.weekNumber}`}
                                         </p>
                                         <div className="flex items-center gap-2 mt-0.5 flex-wrap">
@@ -182,7 +206,12 @@ export function ExercisePage() {
                                                         {completed}/{allSets.length} series
                                                     </Badge>
                                                     {maxWeight > 0 && (
-                                                        <Badge variant="blue">{maxWeight} kg max</Badge>
+                                                        <Badge variant="blue">
+                                                            {maxWeight} kg max
+                                                            {isPR && (
+                                                                <span className="ml-1 text-[11px]">👑 PR</span>
+                                                            )}
+                                                        </Badge>
                                                     )}
                                                     {weekVolume > 0 && (
                                                         <span className="text-xs text-gray-400">{weekVolume} kg vol.</span>
@@ -205,14 +234,16 @@ export function ExercisePage() {
                             )
                         })}
 
-                        {/* Botón nueva semana */}
-                        <button
-                            onClick={handleAddWeek}
-                            className="w-full flex items-center justify-center gap-2 py-4 rounded-3xl border-2 border-dashed border-gray-300 dark:border-white/15 text-gray-500 dark:text-gray-600 hover:border-blue-500/60 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200 text-sm font-medium"
-                        >
-                            <TrendingUp size={18} />
-                            Nueva semana
-                        </button>
+                        {/* Botón nueva semana — solo si el CTA azul de arriba no está visible */}
+                        {!showStartCTA && (
+                            <button
+                                onClick={handleAddWeek}
+                                className="w-full flex items-center justify-center gap-2 py-4 rounded-3xl border-2 border-dashed border-gray-300 dark:border-white/15 text-gray-500 dark:text-gray-600 hover:border-blue-500/60 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200 text-sm font-medium"
+                            >
+                                <TrendingUp size={18} />
+                                Nueva semana
+                            </button>
+                        )}
                     </div>
                 )}
             </div>

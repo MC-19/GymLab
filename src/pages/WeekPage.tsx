@@ -9,6 +9,7 @@ import { EmptyState } from '../components/ui/EmptyState'
 import { ProgressBar } from '../components/ui/ProgressBar'
 import { ThemeToggle } from '../components/ui/ThemeToggle'
 import { calcTotalVolume, getCompletedSets } from '../utils/helpers'
+import { useTimer } from '../context/TimerContext'
 import type { LoggedSet } from '../types'
 
 export function WeekPage() {
@@ -19,6 +20,7 @@ export function WeekPage() {
     }>()
     const navigate = useNavigate()
     const { days, addSet, updateSet, deleteSet, showToast } = useWorkoutContext()
+    const { startTimer } = useTimer()
 
     const [deletingSetId, setDeletingSetId] = useState<string | null>(null)
 
@@ -45,8 +47,20 @@ export function WeekPage() {
         showToast('Serie añadida', 'success')
     }
 
+    const isSetComplete = (s: LoggedSet) => s.weight !== null && s.reps !== null
+
     const handleUpdateSet = (setId: string, updates: Partial<LoggedSet>) => {
+        const targetSet = week.sets.find(s => s.id === setId)
+        const wasComplete = targetSet ? isSetComplete(targetSet) : false
+
         updateSet(day.id, exercise.id, week.id, setId, updates)
+
+        if (targetSet && !wasComplete) {
+            const tempSet = { ...targetSet, ...updates }
+            if (isSetComplete(tempSet)) {
+                startTimer()
+            }
+        }
     }
 
     const handleDeleteSet = (setId: string) => {
@@ -54,8 +68,6 @@ export function WeekPage() {
         setDeletingSetId(null)
         showToast('Serie eliminada', 'info')
     }
-
-    const isSetComplete = (s: LoggedSet) => s.weight !== null && s.reps !== null
 
     return (
         <div className="page-enter">
@@ -152,10 +164,10 @@ export function WeekPage() {
                                     ].join(' ')}
                                 >
                                     {/* Set number */}
-                                    <div className="w-8 h-8 rounded-xl bg-gray-200/80 dark:bg-white/10 flex items-center justify-center shrink-0">
+                                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-colors ${complete ? 'bg-blue-100 dark:bg-blue-500/20' : 'bg-gray-200/80 dark:bg-white/10'}`}>
                                         {complete
-                                            ? <CheckCircle2 size={16} className="text-blue-500 fill-blue-500/20" />
-                                            : <span className="text-xs font-bold text-gray-600 dark:text-gray-400">{i + 1}</span>
+                                            ? <CheckCircle2 size={18} className="text-blue-600 dark:text-blue-400 animate-bounce-in" />
+                                            : <span className="font-display text-base font-bold text-gray-600 dark:text-gray-400">{i + 1}</span>
                                         }
                                     </div>
 

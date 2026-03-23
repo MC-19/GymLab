@@ -2,6 +2,7 @@ import { useState, useRef } from 'react'
 import { Sun, Moon, Monitor, Trash2, Info, Download, Upload, FileJson, AlertTriangle } from 'lucide-react'
 import { useTheme } from '../hooks/useTheme'
 import { useWorkoutContext } from '../context/WorkoutContext'
+import { useTimer } from '../context/TimerContext'
 import { Button } from '../components/ui/Button'
 import { Modal } from '../components/ui/Modal'
 import type { ThemeMode } from '../types'
@@ -15,6 +16,7 @@ const themeOptions: { value: ThemeMode; label: string; icon: React.ReactNode }[]
 export function SettingsPage() {
     const { theme, setTheme } = useTheme()
     const { days, showToast } = useWorkoutContext()
+    const { defaultRestTime, setDefaultRestTime } = useTimer()
     const [showClearModal, setShowClearModal] = useState(false)
     const [showImportModal, setShowImportModal] = useState(false)
     const [importedData, setImportedData] = useState<string | null>(null)
@@ -123,6 +125,27 @@ export function SettingsPage() {
                                 {opt.label}
                             </button>
                         ))}
+                    </div>
+                </Section>
+
+                {/* Timer settings */}
+                <Section title="Entrenamiento">
+                    <div className="bg-gray-50 dark:bg-white/5 border border-gray-200/60 dark:border-white/8 rounded-3xl p-4 flex items-center justify-between">
+                        <div>
+                            <p className="text-sm font-semibold text-gray-900 dark:text-white">Descanso por defecto</p>
+                            <p className="text-xs text-gray-500 mt-0.5">Automático tras completar serie</p>
+                        </div>
+                        <select
+                            value={defaultRestTime}
+                            onChange={e => setDefaultRestTime(Number(e.target.value))}
+                            className="bg-transparent text-sm font-bold text-blue-600 dark:text-blue-400 outline-none cursor-pointer"
+                        >
+                            <option value={60}>60s</option>
+                            <option value={90}>1:30 min</option>
+                            <option value={120}>2 min</option>
+                            <option value={150}>2:30 min</option>
+                            <option value={180}>3 min</option>
+                        </select>
                     </div>
                 </Section>
 

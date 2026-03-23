@@ -71,6 +71,67 @@ export function getMuscleGroups(): string[] {
     ]
 }
 
+export function getMonday(dateString: string): Date {
+    const d = new Date(dateString)
+    const day = d.getDay()
+    const diff = day === 0 ? -6 : 1 - day
+    d.setDate(d.getDate() + diff)
+    d.setHours(0, 0, 0, 0)
+    return d
+}
+
+export function calculateWeeklyStreak(sessions: { completedAt: string }[]): number {
+    if (sessions.length === 0) return 0
+
+    const mondays = new Set<number>()
+    for (const s of sessions) {
+        mondays.add(getMonday(s.completedAt).getTime())
+    }
+
+    const sortedMondays = Array.from(mondays).sort((a, b) => b - a)
+    if (sortedMondays.length === 0) return 0
+
+    const thisMonday = getMonday(new Date().toISOString()).getTime()
+    const msInWeek = 7 * 24 * 60 * 60 * 1000
+
+    // Si no ha entrenado ni esta semana ni la pasada, perdió la racha
+    if (sortedMondays[0] < thisMonday - msInWeek) {
+        return 0
+    }
+
+    let streak = 0
+    let currentMondayToCheck = thisMonday
+
+    let index = 0
+    if (sortedMondays[0] === thisMonday) {
+        streak = 1
+        index = 1
+        currentMondayToCheck = thisMonday - msInWeek
+    } else if (sortedMondays[0] === thisMonday - msInWeek) {
+        // Entrenó la semana pasada pero aún no esta, la racha sigue viva
+        streak = 1
+        index = 1
+        currentMondayToCheck = thisMonday - 2 * msInWeek
+    }
+
+    for (let i = index; i < sortedMondays.length; i++) {
+        // Tolerancia de +- 2 horas por cambios de DST si fuera necesario, 
+        // pero setHours(0,0,0,0) con hora local ya suele cuadrar al usar ms exactos del mismo huso
+        // Para evitar bugs sutiles de DST, calculamos la diferencia en días en vez de ms exactos
+        const diffMs = currentMondayToCheck - sortedMondays[i]
+        const diffDays = Math.round(diffMs / (24 * 60 * 60 * 1000))
+
+        if (diffDays === 0) {
+            streak++
+            currentMondayToCheck -= msInWeek
+        } else {
+            break
+        }
+    }
+
+    return streak
+}
+
 export interface WeekProgress {
     weekNumber: number
     label: string
@@ -78,6 +139,7 @@ export interface WeekProgress {
     totalVolume: number
     totalSets: number
     estimated1RM: number
+    isPR?: boolean
 }
 
 /**
@@ -85,6 +147,8 @@ export interface WeekProgress {
  * Ordenada por weekNumber ascendente.
  */
 export function getExerciseProgress(exercise: Exercise): WeekProgress[] {
+    let allTimeMax = 0
+
     return exercise.weeks
         .slice()
         .sort((a, b) => a.weekNumber - b.weekNumber)
@@ -96,6 +160,13 @@ export function getExerciseProgress(exercise: Exercise): WeekProgress[] {
             const bestSet = completed.find(s => s.weight === maxWeight)
             const volume = calcTotalVolume(completed)
 
+            let isPR = false
+            if (maxWeight > 0 && maxWeight > allTimeMax) {
+                // Solo es PR si ya teníamos un récord anterior mayor que 0
+                isPR = allTimeMax > 0
+                allTimeMax = maxWeight
+            }
+
             return {
                 weekNumber: week.weekNumber,
                 label: week.label ?? `S${week.weekNumber}`,
@@ -103,6 +174,7 @@ export function getExerciseProgress(exercise: Exercise): WeekProgress[] {
                 totalVolume: volume,
                 totalSets: completed.length,
                 estimated1RM: bestSet ? calc1RM(bestSet.weight!, bestSet.reps!) : 0,
+                isPR
             }
         })
 }

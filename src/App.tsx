@@ -7,10 +7,13 @@ import { WeekPage } from './pages/WeekPage'
 import { HistoryPage } from './pages/HistoryPage'
 import { SettingsPage } from './pages/SettingsPage'
 import { RoutinesPage } from './pages/RoutinesPage'
+import { BodyWeightPage } from './features/bodyweight/components/BodyWeightPage'
+import { TimerWidget } from './components/ui/TimerWidget'
 
 export default function App() {
   return (
     <AppShell>
+      <TimerWidget />
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/routines" element={<RoutinesPage />} />
@@ -18,6 +21,7 @@ export default function App() {
         <Route path="/day/:dayId/exercise/:exerciseId" element={<ExercisePage />} />
         <Route path="/day/:dayId/exercise/:exerciseId/week/:weekId" element={<WeekPage />} />
         <Route path="/history" element={<HistoryPage />} />
+        <Route path="/weight" element={<BodyWeightPage />} />
         <Route path="/settings" element={<SettingsPage />} />
       </Routes>
     </AppShell>
