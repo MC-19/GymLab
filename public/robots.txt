@@ -1,4 +1,12 @@
 User-agent: *
 Allow: /
 
+# These routes are app screens with user-specific data stored locally.
+# There is no indexable public content on these paths.
+Disallow: /day/
+Disallow: /settings
+Disallow: /weight
+Disallow: /history
+Disallow: /routines
+
 Sitemap: https://gym-lab-seven.vercel.app/sitemap.xml
