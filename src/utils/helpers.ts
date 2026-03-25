@@ -63,13 +63,7 @@ export function calc1RM(weight: number, reps: number): number {
     return Math.round(weight * (1 + reps / 30))
 }
 
-export function getMuscleGroups(): string[] {
-    return [
-        'Pecho', 'Espalda', 'Hombros', 'Bíceps', 'Tríceps',
-        'Piernas', 'Cuádriceps', 'Femorales', 'Glúteos', 'Gemelos',
-        'Abdominales', 'Cardio', 'Otro',
-    ]
-}
+
 
 export function getMonday(dateString: string): Date {
     const d = new Date(dateString)

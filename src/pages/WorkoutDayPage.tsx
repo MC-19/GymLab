@@ -11,7 +11,7 @@ import { Badge } from '../components/ui/Badge'
 import { ProgressBar } from '../components/ui/ProgressBar'
 import { Modal } from '../components/ui/Modal'
 import { ThemeToggle } from '../components/ui/ThemeToggle'
-import { getMuscleGroups, getCompletedSets } from '../utils/helpers'
+import { getCompletedSets } from '../utils/helpers'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import type { Exercise } from '../types'
 
@@ -26,7 +26,6 @@ export function WorkoutDayPage() {
     const [editExercise, setEditExercise] = useState<Exercise | null>(null)
     const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
     const [exName, setExName] = useState('')
-    const [exMuscle, setExMuscle] = useState('')
     const [editDayName, setEditDayName] = useState(false)
     const [dayNameInput, setDayNameInput] = useState(day?.name ?? '')
 
@@ -44,9 +43,8 @@ export function WorkoutDayPage() {
     const handleAddExercise = () => {
         const name = exName.trim()
         if (!name) return
-        addExercise(day.id, name, exMuscle || undefined)
+        addExercise(day.id, name)
         setExName('')
-        setExMuscle('')
         setShowAddSheet(false)
     }
 
@@ -54,16 +52,14 @@ export function WorkoutDayPage() {
         if (!editExercise) return
         const name = exName.trim()
         if (!name) return
-        updateExercise(day.id, editExercise.id, { name, muscleGroup: exMuscle || undefined })
+        updateExercise(day.id, editExercise.id, { name })
         setEditExercise(null)
         setExName('')
-        setExMuscle('')
     }
 
     const openEdit = (ex: Exercise) => {
         setEditExercise(ex)
         setExName(ex.name)
-        setExMuscle(ex.muscleGroup ?? '')
     }
 
     const handleDelete = (exId: string) => {
@@ -255,7 +251,7 @@ export function WorkoutDayPage() {
             </div>
 
             {/* Add Exercise Sheet */}
-            <BottomSheet open={showAddSheet} onClose={() => { setShowAddSheet(false); setExName(''); setExMuscle('') }} title="Nuevo ejercicio">
+            <BottomSheet open={showAddSheet} onClose={() => { setShowAddSheet(false); setExName('') }} title="Nuevo ejercicio">
                 <div className="space-y-4">
                     <Input
                         label="Nombre"
@@ -265,27 +261,6 @@ export function WorkoutDayPage() {
                         onKeyDown={e => { if (e.key === 'Enter') handleAddExercise() }}
                         autoFocus
                     />
-                    <div className="flex flex-col gap-1">
-                        <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                            Grupo muscular
-                        </label>
-                        <div className="flex flex-wrap gap-2">
-                            {getMuscleGroups().map(g => (
-                                <button
-                                    key={g}
-                                    onClick={() => setExMuscle(g === exMuscle ? '' : g)}
-                                    className={[
-                                        'px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-150',
-                                        exMuscle === g
-                                            ? 'bg-blue-600 text-white'
-                                            : 'bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/15',
-                                    ].join(' ')}
-                                >
-                                    {g}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
                     <Button fullWidth size="lg" onClick={handleAddExercise} disabled={!exName.trim()}>
                         Añadir ejercicio
                     </Button>
@@ -293,7 +268,7 @@ export function WorkoutDayPage() {
             </BottomSheet>
 
             {/* Edit Exercise Sheet */}
-            <BottomSheet open={editExercise !== null} onClose={() => { setEditExercise(null); setExName(''); setExMuscle('') }} title="Editar ejercicio">
+            <BottomSheet open={editExercise !== null} onClose={() => { setEditExercise(null); setExName('') }} title="Editar ejercicio">
                 <div className="space-y-4">
                     <Input
                         label="Nombre"
@@ -302,27 +277,6 @@ export function WorkoutDayPage() {
                         onKeyDown={e => { if (e.key === 'Enter') handleEditExercise() }}
                         autoFocus
                     />
-                    <div className="flex flex-col gap-1">
-                        <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                            Grupo muscular
-                        </label>
-                        <div className="flex flex-wrap gap-2">
-                            {getMuscleGroups().map(g => (
-                                <button
-                                    key={g}
-                                    onClick={() => setExMuscle(g === exMuscle ? '' : g)}
-                                    className={[
-                                        'px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-150',
-                                        exMuscle === g
-                                            ? 'bg-blue-600 text-white'
-                                            : 'bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/15',
-                                    ].join(' ')}
-                                >
-                                    {g}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
                     <Button fullWidth size="lg" onClick={handleEditExercise} disabled={!exName.trim()}>
                         Guardar cambios
                     </Button>
