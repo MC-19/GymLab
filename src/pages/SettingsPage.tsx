@@ -134,7 +134,7 @@ export function SettingsPage() {
                         {themeOptions.map(opt => (
                             <button
                                 key={opt.value}
-                                onClick={() => { setTheme(opt.value); showToast(`Tema: ${opt.label}`, 'info') }}
+                                onClick={() => setTheme(opt.value)}
                                 className={[
                                     'flex-1 flex flex-col items-center gap-2 py-3 px-2 rounded-2xl border text-xs font-medium transition-all duration-150',
                                     theme === opt.value

@@ -14,7 +14,7 @@ import type { TrainingWeek } from '../types'
 export function ExercisePage() {
     const { dayId, exerciseId } = useParams<{ dayId: string; exerciseId: string }>()
     const navigate = useNavigate()
-    const { days, addWeekFromPrevious, applyWeightIncrement, deleteWeek, showToast } = useWorkoutContext()
+    const { days, addWeekFromPrevious, applyWeightIncrement, deleteWeek } = useWorkoutContext()
 
     // Estado para el modal de sugerencia de sobrecarga
     const [pendingWeek, setPendingWeek] = useState<TrainingWeek | null>(null)

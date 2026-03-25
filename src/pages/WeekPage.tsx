@@ -19,7 +19,7 @@ export function WeekPage() {
         weekId: string
     }>()
     const navigate = useNavigate()
-    const { days, addSet, updateSet, deleteSet, showToast } = useWorkoutContext()
+    const { days, addSet, updateSet, deleteSet } = useWorkoutContext()
     const { startTimer } = useTimer()
 
     const [deletingSetId, setDeletingSetId] = useState<string | null>(null)

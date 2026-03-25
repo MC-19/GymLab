@@ -17,7 +17,7 @@ import type { Exercise } from '../types'
 export function WorkoutDayPage() {
     const { dayId } = useParams<{ dayId: string }>()
     const navigate = useNavigate()
-    const { days, updateDay, deleteExercise, addExercise, updateExercise, reorderExercises, showToast, completeSession, currentDayIndex } = useWorkoutContext()
+    const { days, updateDay, deleteExercise, addExercise, updateExercise, reorderExercises, completeSession, currentDayIndex } = useWorkoutContext()
 
     const day = days.find(d => d.id === dayId)
 

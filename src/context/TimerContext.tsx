@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useState, useRef, type ReactNode } from 'react'
 import { useLocalStorage } from '../hooks/useLocalStorage'
 import { useToast } from '../hooks/useToast'
 import { useAudioBeep } from '../hooks/useAudioBeep'
@@ -28,6 +28,9 @@ export function TimerProvider({ children }: { children: ReactNode }) {
     const [duration, setDuration] = useState(0)
     const [timeRemaining, setTimeRemaining] = useState(0)
     const [endTime, setEndTime] = useState<number | null>(null)
+    
+    // Almacén para el audio silencioso que mantiene vivo el JS en iOS
+    const silentAudioRef = useRef<HTMLAudioElement | null>(null)
 
     // Load from memory if page reloads during active timer
     useEffect(() => {
