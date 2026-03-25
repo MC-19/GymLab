@@ -44,7 +44,6 @@ export function WeekPage() {
 
     const handleAddSet = () => {
         addSet(day.id, exercise.id, week.id)
-        showToast('Serie añadida', 'success')
     }
 
     const isSetComplete = (s: LoggedSet) => s.weight !== null && s.reps !== null
@@ -66,7 +65,6 @@ export function WeekPage() {
     const handleDeleteSet = (setId: string) => {
         deleteSet(day.id, exercise.id, week.id, setId)
         setDeletingSetId(null)
-        showToast('Serie eliminada', 'info')
     }
 
     return (

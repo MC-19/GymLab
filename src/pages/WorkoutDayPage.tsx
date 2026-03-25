@@ -45,7 +45,6 @@ export function WorkoutDayPage() {
         setExName('')
         setExMuscle('')
         setShowAddSheet(false)
-        showToast(`"${name}" añadido`, 'success')
     }
 
     const handleEditExercise = () => {
@@ -56,7 +55,6 @@ export function WorkoutDayPage() {
         setEditExercise(null)
         setExName('')
         setExMuscle('')
-        showToast('Ejercicio actualizado', 'success')
     }
 
     const openEdit = (ex: Exercise) => {
@@ -69,14 +67,12 @@ export function WorkoutDayPage() {
         const ex = day.exercises.find(e => e.id === exId)
         deleteExercise(day.id, exId)
         setDeleteConfirm(null)
-        showToast(`"${ex?.name}" eliminado`, 'info')
     }
 
     const handleSaveDayName = () => {
         const name = dayNameInput.trim()
         if (name) updateDay(day.id, { name })
         setEditDayName(false)
-        showToast('Nombre actualizado', 'success')
     }
 
     const moveExercise = (exId: string, direction: 'up' | 'down') => {
@@ -235,12 +231,6 @@ export function WorkoutDayPage() {
                                 const nextIndex = (currentDayIndex + 1) % days.length
                                 const nextDay = days[nextIndex]
                                 completeSession(day.id, days.length)
-                                showToast(
-                                    days.length > 1
-                                        ? `¡Completado! Siguiente: ${nextDay?.name}`
-                                        : '¡Entrenamiento completado!',
-                                    'success'
-                                )
                                 navigate('/')
                             }}
                             className="w-full flex items-center justify-center gap-2 py-4 mt-1 rounded-3xl bg-blue-600 dark:bg-blue-500 text-white font-semibold text-sm hover:bg-blue-700 dark:hover:bg-blue-600 active:scale-[0.98] transition-all duration-150 shadow-md shadow-blue-600/25"

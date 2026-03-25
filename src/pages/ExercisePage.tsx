@@ -45,7 +45,6 @@ export function ExercisePage() {
 
     const handleAddWeek = () => {
         const { week, shouldSuggestIncrease } = addWeekFromPrevious(day.id, exercise.id)
-        showToast(`Semana ${week.weekNumber} creada`, 'success')
 
         if (shouldSuggestIncrease) {
             // Mostrar modal de sugerencia antes de navegar
@@ -69,7 +68,6 @@ export function ExercisePage() {
     const handleDeleteWeek = (week: TrainingWeek, e: React.MouseEvent) => {
         e.stopPropagation()
         deleteWeek(day.id, exercise.id, week.id)
-        showToast(`Semana ${week.weekNumber} eliminada`, 'info')
     }
 
     // Semana anterior a la pendiente (para mostrar el peso de referencia en el modal)
