@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://gym-lab-seven.vercel.app/sitemap.xml

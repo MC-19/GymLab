@@ -12,6 +12,7 @@ import { ProgressBar } from '../components/ui/ProgressBar'
 import { Modal } from '../components/ui/Modal'
 import { ThemeToggle } from '../components/ui/ThemeToggle'
 import { getMuscleGroups, getCompletedSets } from '../utils/helpers'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import type { Exercise } from '../types'
 
 export function WorkoutDayPage() {
@@ -28,6 +29,8 @@ export function WorkoutDayPage() {
     const [exMuscle, setExMuscle] = useState('')
     const [editDayName, setEditDayName] = useState(false)
     const [dayNameInput, setDayNameInput] = useState(day?.name ?? '')
+
+    useDocumentTitle(`GymLab — ${day?.name || 'Día'}`)
 
     if (!day) {
         return (
