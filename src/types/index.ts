@@ -1,5 +1,17 @@
 // Core data types for GymLab
 
+export type MuscleGroup = 'Pecho' | 'Espalda' | 'Cuádriceps' | 'Femorales' | 'Glúteos' | 'Gemelos' | 'Hombros' | 'Bíceps' | 'Tríceps' | 'Antebrazos' | 'Trapecios' | 'Lumbares' | 'Aductores' | 'Abductores' | 'Abdomen' | 'Cardio' | 'Cuerpo completo'
+export type Equipment = 'Barra' | 'Mancuernas' | 'Máquina' | 'Polea' | 'Peso Corporal' | 'Kettlebell' | 'Otro' | 'Cardio'
+
+export interface CatalogExercise {
+    id: string
+    name: string
+    muscleGroup: MuscleGroup
+    equipment: Equipment
+    imageUrl?: string
+    gifUrl?: string
+}
+
 export interface LoggedSet {
     id: string
     weight: number | null   // null = campo vacío
@@ -23,8 +35,9 @@ export interface TrainingWeek {
 export interface Exercise {
     id: string
     name: string
-    muscleGroup?: string
+    muscleGroup?: MuscleGroup | string
     notes?: string
+    catalogId?: string      // ID to link to official catalog media
     weeks: TrainingWeek[]   // Historial de semanas de este ejercicio
 }
 

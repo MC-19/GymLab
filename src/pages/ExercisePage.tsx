@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Plus, ChevronLeft, Trash2, Dumbbell, TrendingUp, ChevronRight, BarChart2, Zap, Play } from 'lucide-react'
+import { Plus, ChevronLeft, Trash2, Dumbbell, TrendingUp, ChevronRight, BarChart2, Zap, Play, Info } from 'lucide-react'
 import { useWorkoutContext } from '../context/WorkoutContext'
 import { Button } from '../components/ui/Button'
 import { IconButton } from '../components/ui/IconButton'
@@ -8,6 +8,9 @@ import { EmptyState } from '../components/ui/EmptyState'
 import { Badge } from '../components/ui/Badge'
 import { ThemeToggle } from '../components/ui/ThemeToggle'
 import { BottomSheet } from '../components/ui/BottomSheet'
+import { Modal } from '../components/ui/Modal'
+import { EXERCISE_CATALOG } from '../data/exerciseCatalog'
+import { normalizeString } from '../utils/stringUtils'
 import { calcTotalVolume, getCompletedSets, getExerciseProgress } from '../utils/helpers'
 import type { TrainingWeek } from '../types'
 
@@ -18,6 +21,7 @@ export function ExercisePage() {
 
     // Estado para el modal de sugerencia de sobrecarga
     const [pendingWeek, setPendingWeek] = useState<TrainingWeek | null>(null)
+    const [showTechnique, setShowTechnique] = useState(false)
 
     const day = days.find(d => d.id === dayId)
     const exercise = day?.exercises.find(e => e.id === exerciseId)
@@ -32,6 +36,11 @@ export function ExercisePage() {
     }
 
     const progress = getExerciseProgress(exercise)
+    const catalogEntry = exercise.catalogId
+        ? EXERCISE_CATALOG.find(ce => ce.id === exercise.catalogId)
+        : EXERCISE_CATALOG.find(ce => 
+            normalizeString(ce.name) === normalizeString(exercise?.name || "")
+        )
     // Semanas ordenadas: la más reciente (mayor weekNumber) primero
     const sortedWeeks = [...exercise.weeks].sort((a, b) => b.weekNumber - a.weekNumber)
 
@@ -100,11 +109,22 @@ export function ExercisePage() {
 
             <div className="flex-1 px-5 pt-5 pb-8 max-w-lg mx-auto w-full space-y-4">
 
+                {/* ── BOTON VER TECNICA ────────────────────────────────── */}
+                {catalogEntry && (catalogEntry.gifUrl || catalogEntry.imageUrl) && (
+                    <button
+                        onClick={() => setShowTechnique(true)}
+                        className="w-full flex items-center justify-center gap-2 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold rounded-2xl py-3.5 text-sm transition-all hover:bg-blue-100 dark:hover:bg-blue-500/20 active:scale-[0.98]"
+                    >
+                        <Info size={18} />
+                        Ver técnica del ejercicio
+                    </button>
+                )}
+
                 {/* ── CTA: Entrenar hoy ────────────────────────────────── */}
                 {showStartCTA && (
                     <button
                         onClick={handleAddWeek}
-                        className="w-full flex items-center justify-center gap-2.5 bg-blue-600 hover:bg-blue-500 active:scale-[0.98] text-white font-semibold rounded-2xl py-4 text-sm transition-all shadow-lg shadow-blue-600/25"
+                        className="w-full flex items-center justify-center gap-2.5 bg-blue-600 hover:bg-blue-500 active:scale-[0.98] text-white font-semibold rounded-2xl py-4 text-sm transition-all"
                     >
                         <Play size={16} className="fill-white" />
                         {latestWeek === null ? 'Empezar primera semana' : 'Empezar nueva semana'}
@@ -127,13 +147,10 @@ export function ExercisePage() {
                                 const isLast = i === progress.length - 1
                                 return (
                                     <div key={p.weekNumber} className="relative flex flex-col items-center gap-1 flex-1 min-w-0 group">
-                                        {/* Glow for PR */}
-                                        {p.isPR && (
-                                            <div className="absolute inset-x-0 bottom-4 -top-2 bg-yellow-400/20 blur-md rounded-t-lg pointer-events-none" />
-                                        )}
+
                                         <div className="w-full flex items-end justify-center z-10" style={{ height: '44px' }}>
                                             <div
-                                                className={`w-full rounded-t-lg transition-all duration-300 ${p.isPR ? 'bg-gradient-to-t from-yellow-500 to-yellow-400 shadow-sm shadow-yellow-500/50' : isLast ? 'bg-gradient-to-t from-blue-600 to-blue-500 shadow-sm shadow-blue-500/40' : 'bg-blue-200 dark:bg-blue-500/30'}`}
+                                                className={`w-full rounded-t-lg transition-all duration-300 ${p.isPR ? 'bg-yellow-500' : isLast ? 'bg-blue-600 dark:bg-blue-500' : 'bg-blue-200 dark:bg-blue-500/30'}`}
                                                 style={{ height: `${Math.max(heightPct, 8)}%` }}
                                             />
                                         </div>
@@ -186,7 +203,7 @@ export function ExercisePage() {
                                     ].join(' ')}
                                     onClick={() => navigate(`/day/${day.id}/exercise/${exercise.id}/week/${week.id}`)}
                                 >
-                                    <div className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0 ${isFullyDone ? 'bg-gradient-to-br from-blue-500 to-blue-600 shadow-md shadow-blue-500/20 text-white' : 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400'}`}>
+                                    <div className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0 ${isFullyDone ? 'bg-blue-600 dark:bg-blue-500 text-white' : 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400'}`}>
                                         <span className="font-display text-lg font-bold">
                                             {week.weekNumber}
                                         </span>
@@ -299,6 +316,32 @@ export function ExercisePage() {
                     </p>
                 </div>
             </BottomSheet>
+
+            {/* Modal de Técnica */}
+            <Modal open={showTechnique} onClose={() => setShowTechnique(false)} title="Técnica">
+                <div className="flex flex-col items-center gap-4 py-2">
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white text-center pb-2">{exercise.name}</h3>
+                    {catalogEntry?.gifUrl ? (
+                        <img 
+                            src={catalogEntry.gifUrl} 
+                            alt={exercise.name} 
+                            className="w-full rounded-2xl object-cover bg-white shadow-sm"
+                            loading="lazy"
+                        />
+                    ) : catalogEntry?.imageUrl ? (
+                        <img 
+                            src={catalogEntry.imageUrl} 
+                            alt={exercise.name} 
+                            className="w-full rounded-2xl object-cover bg-white shadow-sm"
+                            loading="lazy"
+                        />
+                    ) : null}
+                    <Button fullWidth onClick={() => setShowTechnique(false)} className="mt-4">
+                        Entendido
+                    </Button>
+                </div>
+            </Modal>
+
         </div>
     )
 }

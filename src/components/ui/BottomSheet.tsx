@@ -7,10 +7,11 @@ interface BottomSheetProps {
     open: boolean
     onClose: () => void
     title?: string
+    className?: string
     children: ReactNode
 }
 
-export function BottomSheet({ open, onClose, title, children }: BottomSheetProps) {
+export function BottomSheet({ open, onClose, title, className = '', children }: BottomSheetProps) {
     const keyboardHeight = useKeyboardHeight()
 
     useEffect(() => {
@@ -39,7 +40,7 @@ export function BottomSheet({ open, onClose, title, children }: BottomSheetProps
             />
             {/* Sheet — offset up by keyboard height so it stays above the keyboard */}
             <div
-                className="relative w-full bg-white dark:bg-gray-900 rounded-t-3xl shadow-2xl animate-slide-up max-h-[92dvh] flex flex-col transition-[bottom] duration-100"
+                className={`relative w-full bg-white dark:bg-gray-900 rounded-t-3xl shadow-2xl animate-slide-up max-h-[92dvh] flex flex-col transition-[bottom] duration-100 ${className}`}
                 style={{ marginBottom: keyboardHeight }}
             >
                 {/* Handle */}

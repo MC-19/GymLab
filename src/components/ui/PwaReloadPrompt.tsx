@@ -27,7 +27,7 @@ export function PwaReloadPrompt() {
 
     return (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[92%] max-w-sm animate-slide-up">
-            <div className="bg-blue-600 dark:bg-blue-500 text-white rounded-2xl shadow-xl shadow-blue-500/20 p-3 pr-2 flex items-center gap-3 border border-blue-400/30">
+            <div className="bg-blue-600 dark:bg-blue-500 text-white rounded-2xl p-3 pr-2 flex items-center gap-3 border border-blue-400/30">
                 <div className="w-10 h-10 shrink-0 rounded-xl bg-white/20 flex items-center justify-center">
                     <RefreshCw size={18} className="text-white" />
                 </div>

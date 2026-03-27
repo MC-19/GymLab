@@ -1,11 +1,13 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { CalendarDays, ChevronRight, ListChecks, Shuffle } from 'lucide-react'
+import { CalendarDays, ChevronRight, ListChecks, Shuffle, Bell } from 'lucide-react'
 import { useWorkoutContext } from '../context/WorkoutContext'
 import { ThemeToggle } from '../components/ui/ThemeToggle'
 import { OnboardingCard } from '../components/ui/OnboardingCard'
 import { calculateWeeklyStreak } from '../utils/helpers'
 import { useTimer } from '../context/TimerContext'
+import { WhatsNewModal } from '../components/ui/WhatsNewModal'
+import { LATEST_VERSION } from '../data/changelog'
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -49,6 +51,21 @@ export function Dashboard() {
     const { setDefaultRestTime } = useTimer()
 
     const [showDayPicker, setShowDayPicker] = useState(false)
+    const [showChangelog, setShowChangelog] = useState(false)
+    const [hasUnseenUpdates, setHasUnseenUpdates] = useState(false)
+
+    useEffect(() => {
+        const lastSeen = localStorage.getItem('GYMLAB_LAST_VERSION_SEEN')
+        if (lastSeen !== LATEST_VERSION) {
+            setHasUnseenUpdates(true)
+        }
+    }, [])
+
+    const handleOpenChangelog = () => {
+        setHasUnseenUpdates(false)
+        setShowChangelog(true)
+        localStorage.setItem('GYMLAB_LAST_VERSION_SEEN', LATEST_VERSION)
+    }
 
     const DAY_LETTERS = ['A', 'B', 'C', 'D', 'E']
 
@@ -90,7 +107,18 @@ export function Dashboard() {
             <div className="sticky top-0 z-30 bg-white/80 dark:bg-black/80 backdrop-blur-xl border-b border-gray-100/60 dark:border-white/8">
                 <div className="flex items-center justify-between px-5 h-14 max-w-lg mx-auto">
                     <img src="/icons/icon-512.png" alt="GymLab" className="h-30 w-auto object-contain" />
-                    <ThemeToggle />
+                    <div className="flex items-center gap-2">
+                        <button 
+                            onClick={handleOpenChangelog}
+                            className="relative w-10 h-10 rounded-full bg-gray-100 dark:bg-white/10 flex items-center justify-center text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/20 transition-colors"
+                        >
+                            <Bell size={18} />
+                            {hasUnseenUpdates && (
+                                <span className="absolute top-2.5 right-2 right-2.5 w-2.5 h-2.5 rounded-full bg-red-500 border-2 border-gray-100 dark:border-black" />
+                            )}
+                        </button>
+                        <ThemeToggle />
+                    </div>
                 </div>
             </div>
 
@@ -103,7 +131,7 @@ export function Dashboard() {
                     <>
                         {/* Streak Banner */}
                         {streak > 0 && (
-                            <div className="flex items-center justify-between bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-500/10 dark:to-red-500/10 border border-orange-200/60 dark:border-orange-500/20 px-4 py-3.5 rounded-3xl -mt-2 shadow-sm shadow-orange-500/5">
+                            <div className="flex items-center justify-between bg-orange-50 dark:bg-orange-500/10 border border-orange-200/60 dark:border-orange-500/20 px-4 py-3.5 rounded-3xl -mt-2">
                                 <div className="flex items-center gap-3">
                                     <div className="w-9 h-9 rounded-full bg-orange-100 dark:bg-orange-500/20 flex items-center justify-center shrink-0">
                                         <span className="text-lg leading-none">🔥</span>
@@ -124,10 +152,9 @@ export function Dashboard() {
                         <div>
                             <button
                                 onClick={() => navigate(`/day/${currentDay!.id}`)}
-                                className="relative w-full text-left bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 dark:from-blue-500 dark:via-blue-600 dark:to-indigo-700 rounded-[2rem] p-6 shadow-xl shadow-blue-600/30 dark:shadow-blue-500/20 hover:scale-[1.02] active:scale-[0.98] transition-transform duration-300 overflow-hidden group border border-white/10"
+                                className="relative w-full text-left bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 dark:from-blue-500 dark:via-blue-600 dark:to-indigo-700 rounded-[2rem] p-6 hover:scale-[1.02] active:scale-[0.98] transition-transform duration-300 overflow-hidden group border border-white/10"
                             >
-                                {/* Background glow / glass effect */}
-                                <div className="absolute top-0 right-0 -left-1/4 -bottom-1/4 bg-gradient-to-br from-white/10 to-transparent opacity-50 blur-2xl pointer-events-none" />
+
 
                                 <div className="relative flex items-start justify-between gap-3 z-10">
                                     <div className="flex-1 min-w-0">
@@ -352,6 +379,8 @@ export function Dashboard() {
                     </div>
                 </>
             )}
+
+            <WhatsNewModal open={showChangelog} onClose={() => setShowChangelog(false)} />
         </div>
     )
 }

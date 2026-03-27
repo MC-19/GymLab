@@ -17,7 +17,7 @@ interface WorkoutContextType {
     reorderDays: (orderedIds: string[]) => void
     duplicateDay: (dayId: string) => WorkoutDay | undefined
     // Exercises
-    addExercise: (dayId: string, name: string, muscleGroup?: string) => Exercise
+    addExercise: (dayId: string, name: string, muscleGroup?: string, catalogId?: string) => Exercise
     updateExercise: (dayId: string, exerciseId: string, updates: Partial<Exercise>) => void
     deleteExercise: (dayId: string, exerciseId: string) => void
     reorderExercises: (dayId: string, orderedIds: string[]) => void

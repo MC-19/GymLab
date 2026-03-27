@@ -74,7 +74,7 @@ export function OnboardingCard({ onSelect }: OnboardingCardProps) {
                                     'font-bold text-base border-2 transition-all duration-200',
                                     'disabled:cursor-not-allowed',
                                     selectedRest === opt.value
-                                        ? 'bg-amber-500 border-amber-500 text-white scale-105 shadow-lg shadow-amber-500/30'
+                                        ? 'bg-amber-500 border-amber-500 text-white scale-105'
                                         : 'bg-gray-50 dark:bg-white/5 border-gray-200 dark:border-white/10 text-gray-800 dark:text-white hover:border-amber-500/60 hover:bg-amber-50/50 dark:hover:bg-amber-500/10',
                                     !selectedRest && isCreating ? 'opacity-40' : '',
                                 ].join(' ')}
@@ -110,7 +110,7 @@ export function OnboardingCard({ onSelect }: OnboardingCardProps) {
                 <div className="flex flex-col gap-3 w-full max-w-[260px]">
                     <button
                         onClick={handleRequestNotifications}
-                        className="w-full py-3.5 rounded-2xl font-bold text-[15px] bg-blue-600 dark:bg-blue-500 text-white shadow-lg shadow-blue-500/30 transition-transform active:scale-95 flex items-center justify-center gap-2"
+                        className="w-full py-3.5 rounded-2xl font-bold text-[15px] bg-blue-600 dark:bg-blue-500 text-white transition-transform active:scale-95 flex items-center justify-center gap-2"
                     >
                         Activar notificaciones
                     </button>
@@ -161,7 +161,7 @@ export function OnboardingCard({ onSelect }: OnboardingCardProps) {
                     <button
                         onClick={handleFinish}
                         disabled={isCreating}
-                        className="w-full py-4 rounded-2xl font-bold text-[15px] bg-gray-900 dark:bg-white text-white dark:text-black shadow-lg shadow-black/20 dark:shadow-white/20 transition-transform active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
+                        className="w-full py-4 rounded-2xl font-bold text-[15px] bg-gray-900 dark:bg-white text-white dark:text-black transition-transform active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
                     >
                         {isCreating ? (
                             <svg className="animate-spin w-5 h-5" viewBox="0 0 24 24" fill="none">
@@ -216,7 +216,7 @@ export function OnboardingCard({ onSelect }: OnboardingCardProps) {
                                 'font-bold text-xl border-2 transition-all duration-200',
                                 'disabled:cursor-not-allowed',
                                 isSelected
-                                    ? 'bg-blue-600 dark:bg-blue-500 border-blue-600 dark:border-blue-500 text-white scale-105 shadow-lg shadow-blue-600/30'
+                                    ? 'bg-blue-600 dark:bg-blue-500 border-blue-600 dark:border-blue-500 text-white scale-105'
                                     : 'bg-gray-50 dark:bg-white/5 border-gray-200 dark:border-white/10 text-gray-800 dark:text-white hover:border-blue-500/60 hover:bg-blue-50/50 dark:hover:bg-blue-500/10',
                                 !isSelected && isCreating ? 'opacity-40' : '',
                             ].join(' ')}

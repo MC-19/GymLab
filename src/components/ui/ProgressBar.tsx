@@ -2,6 +2,7 @@ interface ProgressBarProps {
     value: number // 0–100
     label?: string
     color?: 'blue' | 'gold' | 'green'
+    className?: string
 }
 
 const colors = {
@@ -10,10 +11,10 @@ const colors = {
     green: 'bg-green-500',
 }
 
-export function ProgressBar({ value, label, color = 'blue' }: ProgressBarProps) {
+export function ProgressBar({ value, label, color = 'blue', className = '' }: ProgressBarProps) {
     const clamped = Math.max(0, Math.min(100, value))
     return (
-        <div className="flex flex-col gap-1">
+        <div className={`flex flex-col gap-1 ${className}`}>
             {label && (
                 <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
                     <span>{label}</span>

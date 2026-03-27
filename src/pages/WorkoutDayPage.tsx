@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Plus, ChevronLeft, Trash2, Pencil, ChevronRight, Dumbbell, CheckCircle2, ArrowUp, ArrowDown } from 'lucide-react'
+import { MoreVertical, ChevronRight, Plus, Dumbbell, History, Scale, TrendingUp, Calendar, Trash2, Edit2, Check, X, Search, Info, ChevronLeft, Pencil, CheckCircle2, ArrowUp, ArrowDown } from 'lucide-react'
+import { normalizeString } from '../utils/stringUtils'
 import { useWorkoutContext } from '../context/WorkoutContext'
 import { Button } from '../components/ui/Button'
 import { IconButton } from '../components/ui/IconButton'
@@ -13,7 +14,16 @@ import { Modal } from '../components/ui/Modal'
 import { ThemeToggle } from '../components/ui/ThemeToggle'
 import { getCompletedSets } from '../utils/helpers'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
-import type { Exercise } from '../types'
+import { ExerciseCatalogSheet } from '../components/exercises/ExerciseCatalogSheet'
+import { EXERCISE_CATALOG } from '../data/exerciseCatalog'
+import type { MuscleGroup, Exercise } from '../types'
+
+const MUSCLE_GROUPS: MuscleGroup[] = [
+    'Pecho', 'Espalda', 'Hombros', 'Bíceps', 'Tríceps',
+    'Antebrazos', 'Trapecios', 'Cuádriceps', 'Femorales', 
+    'Glúteos', 'Gemelos', 'Lumbares', 'Aductores', 
+    'Abductores', 'Abdomen', 'Cardio', 'Cuerpo completo'
+]
 
 export function WorkoutDayPage() {
     const { dayId } = useParams<{ dayId: string }>()
@@ -26,6 +36,9 @@ export function WorkoutDayPage() {
     const [editExercise, setEditExercise] = useState<Exercise | null>(null)
     const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
     const [exName, setExName] = useState('')
+    const [editMuscleGroup, setEditMuscleGroup] = useState<MuscleGroup | undefined>(undefined)
+    const [editCatalogId, setEditCatalogId] = useState<string | undefined>(undefined)
+    const [showLinkSheet, setShowLinkSheet] = useState(false)
     const [editDayName, setEditDayName] = useState(false)
     const [dayNameInput, setDayNameInput] = useState(day?.name ?? '')
 
@@ -40,11 +53,9 @@ export function WorkoutDayPage() {
         )
     }
 
-    const handleAddExercise = () => {
-        const name = exName.trim()
-        if (!name) return
-        addExercise(day.id, name)
-        setExName('')
+    const handleSelectExercise = (name: string, muscleGroup?: MuscleGroup, catalogId?: string) => {
+        if (!name.trim()) return
+        addExercise(day.id, name.trim(), muscleGroup, catalogId)
         setShowAddSheet(false)
     }
 
@@ -52,14 +63,29 @@ export function WorkoutDayPage() {
         if (!editExercise) return
         const name = exName.trim()
         if (!name) return
-        updateExercise(day.id, editExercise.id, { name })
+        updateExercise(day.id, editExercise.id, { 
+            name, 
+            muscleGroup: editMuscleGroup,
+            catalogId: editCatalogId
+        })
         setEditExercise(null)
         setExName('')
+        setEditMuscleGroup(undefined)
+        setEditCatalogId(undefined)
     }
 
     const openEdit = (ex: Exercise) => {
         setEditExercise(ex)
         setExName(ex.name)
+        setEditMuscleGroup(ex.muscleGroup as MuscleGroup)
+        setEditCatalogId(ex.catalogId)
+    }
+
+    const handleLinkCatalog = (name: string, muscleGroup?: MuscleGroup, catalogId?: string) => {
+        setExName(name)
+        if (muscleGroup) setEditMuscleGroup(muscleGroup)
+        if (catalogId) setEditCatalogId(catalogId)
+        setShowLinkSheet(false)
     }
 
     const handleDelete = (exId: string) => {
@@ -169,21 +195,43 @@ export function WorkoutDayPage() {
                                         className="w-full text-left px-5 pt-4 pb-3"
                                         onClick={() => navigate(`/day/${day.id}/exercise/${ex.id}`)}
                                     >
-                                        <div className="flex items-center gap-3">
+                                        <div className="flex items-center gap-4">
+                                            {/* Thumbnail */}
+                                            {(() => {
+                                                const catalogEntry = ex.catalogId
+                                                    ? EXERCISE_CATALOG.find(ce => ce.id === ex.catalogId)
+                                                    : EXERCISE_CATALOG.find(ce => 
+                                                        normalizeString(ce.name) === normalizeString(ex.name)
+                                                    )
+                                                return catalogEntry && (catalogEntry.imageUrl || catalogEntry.gifUrl) ? (
+                                                    <div className="w-14 h-14 rounded-2xl overflow-hidden bg-gray-100 dark:bg-white/5 border border-gray-200/60 dark:border-white/10 shrink-0">
+                                                        <img 
+                                                            src={catalogEntry.imageUrl || catalogEntry.gifUrl} 
+                                                            alt={ex.name}
+                                                            className="w-full h-full object-cover"
+                                                        />
+                                                    </div>
+                                                ) : (
+                                                    <div className="w-14 h-14 rounded-2xl bg-blue-500/10 flex items-center justify-center shrink-0">
+                                                        <Dumbbell size={20} className="text-blue-500" />
+                                                    </div>
+                                                )
+                                            })()}
+
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex items-center gap-2">
-                                                    <span className="font-semibold text-gray-900 dark:text-white truncate">{ex.name}</span>
+                                                    <span className="font-bold text-gray-900 dark:text-white truncate text-[15px]">{ex.name}</span>
                                                     <ChevronRight size={14} className="text-gray-400 shrink-0" />
                                                 </div>
-                                                <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                                                    {ex.muscleGroup && <Badge variant="gold">{ex.muscleGroup}</Badge>}
-                                                    <Badge variant={completed === total && total > 0 ? 'green' : 'gray'}>
+                                                <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                                    {ex.muscleGroup && <Badge variant="gold" size="sm" className="text-[10px] px-2 py-0 border-none bg-blue-500/10 text-blue-600 dark:text-blue-400">{ex.muscleGroup}</Badge>}
+                                                    <Badge variant={completed === total && total > 0 ? 'green' : 'gray'} size="sm" className="text-[10px] px-2 py-0 border-none">
                                                         {total > 0 ? `${completed}/${total} series` : 'Sin series'}
                                                     </Badge>
                                                 </div>
                                                 {total > 0 && (
-                                                    <div className="mt-2.5">
-                                                        <ProgressBar value={progress} color={progress === 100 ? 'green' : 'blue'} />
+                                                    <div className="mt-2">
+                                                        <ProgressBar value={progress} color={progress === 100 ? 'green' : 'blue'} className="h-1.5" />
                                                     </div>
                                                 )}
                                             </div>
@@ -232,7 +280,7 @@ export function WorkoutDayPage() {
                                 completeSession(day.id, days.length)
                                 navigate('/')
                             }}
-                            className="w-full flex items-center justify-center gap-2 py-4 mt-1 rounded-3xl bg-blue-600 dark:bg-blue-500 text-white font-semibold text-sm hover:bg-blue-700 dark:hover:bg-blue-600 active:scale-[0.98] transition-all duration-150 shadow-md shadow-blue-600/25"
+                            className="w-full flex items-center justify-center gap-2 py-4 mt-1 rounded-3xl bg-blue-600 dark:bg-blue-500 text-white font-semibold text-sm hover:bg-blue-700 dark:hover:bg-blue-600 active:scale-[0.98] transition-all duration-150"
                         >
                             <CheckCircle2 size={18} />
                             Finalizar entrenamiento
@@ -250,25 +298,15 @@ export function WorkoutDayPage() {
                 )}
             </div>
 
-            {/* Add Exercise Sheet */}
-            <BottomSheet open={showAddSheet} onClose={() => { setShowAddSheet(false); setExName('') }} title="Nuevo ejercicio">
-                <div className="space-y-4">
-                    <Input
-                        label="Nombre"
-                        placeholder="ej: Press de banca"
-                        value={exName}
-                        onChange={e => setExName(e.target.value)}
-                        onKeyDown={e => { if (e.key === 'Enter') handleAddExercise() }}
-                        autoFocus
-                    />
-                    <Button fullWidth size="lg" onClick={handleAddExercise} disabled={!exName.trim()}>
-                        Añadir ejercicio
-                    </Button>
-                </div>
-            </BottomSheet>
+            {/* Catalog Sheet */}
+            <ExerciseCatalogSheet 
+                open={showAddSheet} 
+                onClose={() => setShowAddSheet(false)} 
+                onSelect={handleSelectExercise} 
+            />
 
             {/* Edit Exercise Sheet */}
-            <BottomSheet open={editExercise !== null} onClose={() => { setEditExercise(null); setExName('') }} title="Editar ejercicio">
+            <BottomSheet open={editExercise !== null} onClose={() => { setEditExercise(null); setExName(''); setEditMuscleGroup(undefined); setEditCatalogId(undefined) }} title="Editar ejercicio">
                 <div className="space-y-4">
                     <Input
                         label="Nombre"
@@ -277,7 +315,40 @@ export function WorkoutDayPage() {
                         onKeyDown={e => { if (e.key === 'Enter') handleEditExercise() }}
                         autoFocus
                     />
-                    <Button fullWidth size="lg" onClick={handleEditExercise} disabled={!exName.trim()}>
+
+                    <div>
+                        <button
+                            onClick={() => setShowLinkSheet(true)}
+                            className="w-full flex items-center justify-between px-4 py-3 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 font-semibold rounded-2xl border border-blue-100 dark:border-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-500/20 transition-all text-sm mb-2 mt-4"
+                        >
+                            <span className="flex items-center gap-2">
+                                <Search size={18} />
+                                {editCatalogId ? 'Cambiar vinculación de catálogo' : 'Vincular con el catálogo'}
+                            </span>
+                            <ChevronRight size={18} />
+                        </button>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-semibold mb-2 text-gray-900 dark:text-gray-100">Grupo muscular (Opcional)</label>
+                        <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar -mx-6 px-6 snap-x">
+                            {MUSCLE_GROUPS.map(group => (
+                                <button
+                                    key={group}
+                                    onClick={() => setEditMuscleGroup(editMuscleGroup === group ? undefined : group)}
+                                    className={`whitespace-nowrap px-4 py-2 rounded-xl text-sm font-semibold transition-all snap-start ${
+                                        editMuscleGroup === group
+                                            ? 'bg-blue-600 text-white shadow-sm'
+                                            : 'bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/10'
+                                    }`}
+                                >
+                                    {group}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <Button fullWidth size="lg" onClick={handleEditExercise} disabled={!exName.trim()} className="mt-2">
                         Guardar cambios
                     </Button>
                 </div>
@@ -295,6 +366,15 @@ export function WorkoutDayPage() {
                     </div>
                 </div>
             </Modal>
+
+            {/* Link Catalog Sheet */}
+            <ExerciseCatalogSheet 
+                open={showLinkSheet} 
+                onClose={() => setShowLinkSheet(false)} 
+                onSelect={handleLinkCatalog} 
+                title="Vincular Ejercicio"
+                actionLabel="Vincular con mi ejercicio"
+            />
         </div>
     )
 }

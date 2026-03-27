@@ -11,11 +11,14 @@ const colors: Record<BadgeVariant, string> = {
 interface BadgeProps {
     children: React.ReactNode
     variant?: BadgeVariant
+    size?: 'sm' | 'md'
+    className?: string
 }
 
-export function Badge({ children, variant = 'blue' }: BadgeProps) {
+export function Badge({ children, variant = 'blue', size = 'md', className = '' }: BadgeProps) {
+    const sizeClasses = size === 'sm' ? 'px-2 py-0.5 text-[10px]' : 'px-2.5 py-0.5 text-xs'
     return (
-        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${colors[variant]}`}>
+        <span className={`inline-flex items-center rounded-full font-medium ${sizeClasses} ${colors[variant]} ${className}`}>
             {children}
         </span>
     )

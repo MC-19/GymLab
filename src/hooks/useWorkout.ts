@@ -117,11 +117,12 @@ export function useWorkout() {
 
     // ── Exercises ─────────────────────────────────────────────────────────────
 
-    const addExercise = useCallback((dayId: string, name: string, muscleGroup?: string) => {
+    const addExercise = useCallback((dayId: string, name: string, muscleGroup?: string, catalogId?: string) => {
         const newExercise: Exercise = {
             id: generateId(),
             name,
             muscleGroup,
+            catalogId,
             weeks: [],
         }
         setDays(prev =>

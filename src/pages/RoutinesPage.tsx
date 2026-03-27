@@ -116,8 +116,7 @@ export function RoutinesPage() {
                 {/* ── Post-onboarding banner ─────────────────────────────── */}
                 {bannerVisible && days.length > 0 && currentDay && (
                     <div className="relative mb-4 rounded-3xl bg-blue-50 dark:bg-blue-500/10 border border-blue-200/60 dark:border-blue-500/25 p-5 overflow-hidden">
-                        {/* Decorative gradient blob */}
-                        <div className="absolute -top-4 -right-4 w-24 h-24 rounded-full bg-blue-400/10 dark:bg-blue-400/5 blur-xl pointer-events-none" />
+
 
                         {/* Dismiss button */}
                         <button
@@ -158,7 +157,7 @@ export function RoutinesPage() {
                             </p>
                             <button
                                 onClick={() => handleNavigateToDay(currentDay.id)}
-                                className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-blue-600 dark:bg-blue-500 text-white text-sm font-semibold hover:bg-blue-700 dark:hover:bg-blue-600 active:scale-95 transition-all duration-150 shadow-sm shadow-blue-600/25"
+                                className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-blue-600 dark:bg-blue-500 text-white text-sm font-semibold hover:bg-blue-700 dark:hover:bg-blue-600 active:scale-95 transition-all duration-150"
                             >
                                 <Zap size={14} />
                                 Empezar entrenamiento
