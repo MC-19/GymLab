@@ -1,62 +1,11 @@
 import { useCallback } from 'react'
-import { useLocalStorage } from './useLocalStorage'
 import type { WorkoutDay, Exercise, TrainingWeek, LoggedSet } from '../types'
 import { generateId, copyWorkoutDay } from '../utils/helpers'
 
-const DAYS_KEY = 'gymlab_days'
-
-// ── Migración de datos legacy ──────────────────────────────────────────────────
-// Si el usuario tenía datos con el formato viejo (exercise.sets[]),
-// los convierte automáticamente a exercise.weeks[{ weekNumber:1, sets:[...] }]
-function migrateDays(raw: unknown): WorkoutDay[] {
-    if (!Array.isArray(raw)) return []
-    // Helper: convierte el valor legacy (number | '') a number | null
-    const toNum = (v: unknown): number | null =>
-        v === '' || v === null || v === undefined ? null : Number(v)
-
-    return (raw as WorkoutDay[]).map(day => ({
-        ...day,
-        exercises: (day.exercises ?? []).map(ex => {
-            // Formato viejo: exercise tenía sets[] directamente
-            const legacyEx = ex as unknown as Record<string, unknown> & { weeks?: TrainingWeek[] }
-            const legacySets = legacyEx['sets'] as Array<Record<string, unknown>> | undefined
-
-            if (!legacyEx.weeks && Array.isArray(legacySets)) {
-                const migratedSets: LoggedSet[] = legacySets.map(s => ({
-                    id: typeof s.id === 'string' ? s.id : generateId(),
-                    weight: toNum(s.weight),
-                    reps: toNum(s.reps),
-                    rir: toNum(s.rir),
-                    notes: typeof s.notes === 'string' ? s.notes : undefined,
-                }))
-                return {
-                    id: ex.id,
-                    name: ex.name,
-                    muscleGroup: ex.muscleGroup,
-                    notes: ex.notes,
-                    weeks: migratedSets.length > 0
-                        ? [{ id: generateId(), weekNumber: 1, sets: migratedSets }]
-                        : [],
-                } satisfies Exercise
-            }
-            // Asegura que weeks exista aunque esté vacío
-            return { ...ex, weeks: (ex.weeks ?? []) } as Exercise
-        }),
-    }))
-}
-
-function loadDays(): WorkoutDay[] {
-    try {
-        const raw = localStorage.getItem(DAYS_KEY)
-        if (!raw) return []
-        return migrateDays(JSON.parse(raw))
-    } catch {
-        return []
-    }
-}
-
-export function useWorkout() {
-    const [days, setDays] = useLocalStorage<WorkoutDay[]>(DAYS_KEY, [], loadDays)
+export function useWorkout(
+    days: WorkoutDay[],
+    setDays: (updater: WorkoutDay[] | ((prev: WorkoutDay[]) => WorkoutDay[])) => void
+) {
 
     // ── Helper interno para actualizar un ejercicio dentro de un día ───────────
     const updateExerciseInDay = useCallback(

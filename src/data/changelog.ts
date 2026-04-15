@@ -1,4 +1,4 @@
-import { Sparkles, Dumbbell, Image as ImageIcon, Globe2, Link2, CheckCircle2, Layers } from 'lucide-react'
+import { Sparkles, Dumbbell, Image as ImageIcon, Globe2, Link2, CheckCircle2, Layers, ClockFading } from 'lucide-react'
 
 export interface ChangelogFeature {
     icon: any
@@ -14,6 +14,28 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+    {
+        version: '1.3.0',
+        date: new Date().toISOString().split('T')[0],
+        title: 'Programas y Evolución a Vista de Pájaro 🦅',
+        features: [
+            {
+                icon: Layers,
+                title: 'Bloques de Entrenamiento (Programas)',
+                description: 'La funcionalidad más pedida. Agrupa tus rutinas en bloques (Ej: Hipertrofia Verano, Fuerza). Cambia de programa sin perder tu historial y crea nuevos ciclos.'
+            },
+            {
+                icon: Sparkles,
+                title: 'Gráficos de Área Suavizados',
+                description: 'Adiós a las barras simples. El nuevo historial usa gráficos de área dinámicos y premium para que visualices tu progreso como debe ser.'
+            },
+            {
+                icon: ClockFading,
+                title: 'Filtros de Historial Pro',
+                description: 'Ahora puedes filtrar tu progresión por semanas completas, meses o vista trimestral. Además, localiza rápidamente el progreso usando los nuevos filtros rápidos por rutina.'
+            }
+        ]
+    },
     {
         version: '1.2.0',
         date: '2026-03-27',

@@ -20,6 +20,7 @@ export function RoutinesPage() {
     const {
         days, addDay, deleteDay, duplicateDay, updateDay, reorderDays, showToast,
         currentDayIndex, resetRotation, setCurrentDayIndex, getCurrentDay,
+        activeProgram,
     } = useWorkoutContext()
 
     // Detect fresh arrival from onboarding and arm the banner
@@ -100,7 +101,17 @@ export function RoutinesPage() {
             {/* Header */}
             <div className="sticky top-0 z-30 bg-white/80 dark:bg-black/80 backdrop-blur-xl border-b border-gray-100/60 dark:border-white/8">
                 <div className="flex items-center justify-between px-5 h-14 max-w-lg mx-auto">
-                    <h1 className="text-base font-bold text-gray-900 dark:text-white">Mis rutinas</h1>
+                    <div>
+                        <h1 className="text-base font-bold text-gray-900 dark:text-white">Rutinas</h1>
+                        {activeProgram && (
+                            <button
+                                onClick={() => navigate('/programs')}
+                                className="text-xs text-blue-600 dark:text-blue-400 font-medium leading-none"
+                            >
+                                {activeProgram.name} →
+                            </button>
+                        )}
+                    </div>
                     <ThemeToggle />
                 </div>
             </div>

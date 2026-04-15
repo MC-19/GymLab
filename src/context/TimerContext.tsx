@@ -76,13 +76,6 @@ export function TimerProvider({ children }: { children: ReactNode }) {
                     }
                     playFinishBeeps()
 
-                    if ('Notification' in window && Notification.permission === 'granted') {
-                        new Notification('⏱️ Descanso finalizado', {
-                            body: '¡A por la siguiente serie!',
-                            icon: '/icons/icon-192.png'
-                        })
-                    }
-
                     showToast('¡Tiempo de descanso finalizado!', 'success')
                 } else {
                     setTimeRemaining(remaining)

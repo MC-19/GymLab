@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Sparkles, CheckCircle2, BellRing, Smartphone, Download } from 'lucide-react'
+import { Sparkles, CheckCircle2, Smartphone, Download } from 'lucide-react'
 import { useAudioBeep } from '../../hooks/useAudioBeep'
 
 interface OnboardingCardProps {
@@ -10,7 +10,7 @@ const DAY_LABELS = ['A', 'B', 'C', 'D', 'E']
 const OPTIONS = [2, 3, 4, 5]
 
 export function OnboardingCard({ onSelect }: OnboardingCardProps) {
-    const [step, setStep] = useState<1 | 2 | 3 | 4>(1)
+    const [step, setStep] = useState<1 | 2 | 3>(1)
     const [selectedDays, setSelectedDays] = useState<number | null>(null)
     const [selectedRest, setSelectedRest] = useState<number | null>(null)
     const [isCreating, setIsCreating] = useState(false)
@@ -24,16 +24,6 @@ export function OnboardingCard({ onSelect }: OnboardingCardProps) {
     const handleSelectRest = (seconds: number) => {
         setSelectedRest(seconds)
         setStep(3)
-    }
-
-    const handleRequestNotifications = async () => {
-        if ('Notification' in window) {
-            const res = await Notification.requestPermission()
-            if (res === 'granted') {
-                playStartBeep()
-            }
-        }
-        setStep(4)
     }
 
     const handleFinish = async () => {
@@ -95,37 +85,8 @@ export function OnboardingCard({ onSelect }: OnboardingCardProps) {
         )
     }
 
-    if (step === 3) {
-        return (
-            <div className="flex flex-col items-center px-4 pt-8 pb-4 animate-slide-up w-full">
-                <div className="w-16 h-16 rounded-3xl bg-blue-500/10 dark:bg-blue-500/15 flex items-center justify-center mb-5">
-                    <BellRing size={28} className="text-blue-600 dark:text-blue-400" />
-                </div>
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white text-center mb-1">
-                    Avisos de descanso
-                </h2>
-                <p className="text-sm text-gray-500 dark:text-gray-500 text-center mb-8 leading-relaxed max-w-[280px]">
-                    GymLab puede avisarte con un sonido y notificación cuando termine tu descanso, incluso si no tienes la pantalla abierta.
-                </p>
-                <div className="flex flex-col gap-3 w-full max-w-[260px]">
-                    <button
-                        onClick={handleRequestNotifications}
-                        className="w-full py-3.5 rounded-2xl font-bold text-[15px] bg-blue-600 dark:bg-blue-500 text-white transition-transform active:scale-95 flex items-center justify-center gap-2"
-                    >
-                        Activar notificaciones
-                    </button>
-                    <button
-                        onClick={() => setStep(4)}
-                        className="w-full py-3.5 rounded-2xl font-semibold text-sm bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 transition-colors hover:bg-gray-200 dark:hover:bg-white/10"
-                    >
-                        Omitir por ahora
-                    </button>
-                </div>
-            </div>
-        )
-    }
 
-    if (step === 4) {
+    if (step === 3) {
         return (
             <div className="flex flex-col items-center px-4 pt-8 pb-4 animate-slide-up w-full">
                 <div className="w-16 h-16 rounded-3xl bg-green-500/10 dark:bg-green-500/15 flex items-center justify-center mb-5">

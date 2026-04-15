@@ -40,13 +40,14 @@ export function Dashboard() {
     const navigate = useNavigate()
     const {
         days,
-        addDay,
         getCurrentDay,
         currentDayIndex,
         sessions,
         getRecentSessions,
         setCurrentDayIndex,
         showToast,
+        activeProgram,
+        createProgramWithDays,
     } = useWorkoutContext()
     const { setDefaultRestTime } = useTimer()
 
@@ -70,9 +71,8 @@ export function Dashboard() {
     const DAY_LETTERS = ['A', 'B', 'C', 'D', 'E']
 
     const handleOnboardingSelect = async (count: number, defaultRest: number) => {
-        for (let i = 0; i < count; i++) {
-            addDay(`Día ${DAY_LETTERS[i]}`)
-        }
+        const dayNames = Array.from({ length: count }, (_, i) => `Día ${DAY_LETTERS[i]}`)
+        createProgramWithDays('Mi programa', dayNames)
         setDefaultRestTime(defaultRest)
         navigate('/routines', { state: { fromOnboarding: true } })
     }
@@ -320,6 +320,18 @@ export function Dashboard() {
                                     ))}
                                 </div>
                             </div>
+                        )}
+
+                        {/* Active program chip */}
+                        {activeProgram && (
+                            <button
+                                onClick={() => navigate('/programs')}
+                                className="w-full flex items-center gap-3 px-4 py-3 bg-gray-50 dark:bg-white/5 border border-gray-200/60 dark:border-white/8 rounded-2xl hover:border-blue-500/30 dark:hover:border-blue-500/20 transition-all duration-200 text-left"
+                            >
+                                <span className="text-xs font-semibold text-gray-500 dark:text-gray-500 uppercase tracking-widest flex-1">Programa activo</span>
+                                <span className="text-sm font-semibold text-blue-600 dark:text-blue-400 truncate max-w-[60%]">{activeProgram.name}</span>
+                                <ChevronRight size={14} className="text-gray-300 dark:text-gray-600 shrink-0" />
+                            </button>
                         )}
 
                         {/* ── Quick access to routines ─────────────────── */}

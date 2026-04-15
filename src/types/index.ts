@@ -49,6 +49,15 @@ export interface WorkoutDay {
     order: number
 }
 
+/** Un bloque/programa de entrenamiento que agrupa varios días */
+export interface TrainingProgram {
+    id: string
+    name: string
+    createdAt: string
+    isArchived: boolean
+    days: WorkoutDay[]
+}
+
 /** Entrada de peso corporal registrada por el usuario */
 export interface BodyWeightEntry {
     id: string

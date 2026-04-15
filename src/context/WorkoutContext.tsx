@@ -1,15 +1,26 @@
 import { createContext, useContext, type ReactNode } from 'react'
 import { useWorkout } from '../hooks/useWorkout'
+import { usePrograms } from '../hooks/usePrograms'
 import { useRotation } from '../hooks/useRotation'
 import { useToast } from '../hooks/useToast'
 import type { Toast } from '../hooks/useToast'
-import type { WorkoutDay, Exercise, TrainingWeek, LoggedSet, CompletedSession } from '../types'
+import type { WorkoutDay, Exercise, TrainingWeek, LoggedSet, CompletedSession, TrainingProgram } from '../types'
 
 interface WorkoutContextType {
     days: WorkoutDay[]
     toasts: Toast[]
     showToast: (message: string, type?: Toast['type']) => void
     removeToast: (id: string) => void
+    // Programs
+    programs: TrainingProgram[]
+    activeProgramId: string
+    activeProgram: TrainingProgram | null
+    createProgram: (name: string) => TrainingProgram
+    createProgramWithDays: (name: string, dayNames: string[]) => TrainingProgram
+    updateProgram: (id: string, updates: Partial<Pick<TrainingProgram, 'name' | 'isArchived'>>) => void
+    archiveProgram: (id: string) => void
+    deleteProgram: (id: string) => void
+    setActiveProgram: (id: string) => void
     // Days
     addDay: (name: string) => WorkoutDay
     updateDay: (dayId: string, updates: Partial<WorkoutDay>) => void
@@ -44,12 +55,28 @@ interface WorkoutContextType {
 const WorkoutContext = createContext<WorkoutContextType | null>(null)
 
 export function WorkoutProvider({ children }: { children: ReactNode }) {
-    const workout = useWorkout()
+    const programsApi = usePrograms()
+    const workout = useWorkout(programsApi.days, programsApi.setDays)
     const rotation = useRotation()
     const { toasts, showToast, removeToast } = useToast()
 
     return (
-        <WorkoutContext.Provider value={{ ...workout, ...rotation, toasts, showToast, removeToast }}>
+        <WorkoutContext.Provider value={{
+            ...workout,
+            ...rotation,
+            toasts,
+            showToast,
+            removeToast,
+            programs: programsApi.programs,
+            activeProgramId: programsApi.activeProgramId,
+            activeProgram: programsApi.activeProgram,
+            createProgram: programsApi.createProgram,
+            createProgramWithDays: programsApi.createProgramWithDays,
+            updateProgram: programsApi.updateProgram,
+            archiveProgram: programsApi.archiveProgram,
+            deleteProgram: programsApi.deleteProgram,
+            setActiveProgram: programsApi.setActiveProgram,
+        }}>
             {children}
         </WorkoutContext.Provider>
     )
