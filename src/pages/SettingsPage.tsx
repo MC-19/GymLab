@@ -285,7 +285,7 @@ export function SettingsPage() {
                     <div className="flex flex-col items-center gap-3 py-2">
                         <img src="/icons/icon-512.png" alt="GymLab" className="h-40 w-auto object-contain" />
                         <div className="space-y-1 text-center text-sm text-gray-600 dark:text-gray-500">
-                            <p>Versión <span className="font-medium text-gray-900 dark:text-gray-300">1.3.0</span></p>
+                            <p>Versión <span className="font-medium text-gray-900 dark:text-gray-300">1.4.0</span></p>
                             <p>Datos guardados localmente en tu dispositivo.</p>
                             <p className="text-xs text-gray-500 dark:text-gray-600">Hecho con ❤️ para personas que entrenan en serio.</p>
                         </div>

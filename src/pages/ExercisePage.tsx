@@ -173,12 +173,7 @@ export function ExercisePage() {
                     <EmptyState
                         icon={<Dumbbell size={28} />}
                         title="Sin semanas"
-                        description="Crea tu primera semana de entrenamiento"
-                        action={
-                            <Button onClick={handleAddWeek} icon={<Plus size={16} />}>
-                                Nueva semana
-                            </Button>
-                        }
+                        description="Crea tu primera semana para ver tu historial de progresión"
                     />
                 ) : (
                     <div className="space-y-2.5">

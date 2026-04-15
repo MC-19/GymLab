@@ -8,9 +8,9 @@ import { NumberInput } from '../components/ui/Input'
 import { EmptyState } from '../components/ui/EmptyState'
 import { ProgressBar } from '../components/ui/ProgressBar'
 import { ThemeToggle } from '../components/ui/ThemeToggle'
-import { calcTotalVolume, getCompletedSets } from '../utils/helpers'
+import { calcTotalVolume, getCompletedSets, calc1RM } from '../utils/helpers'
 import { useTimer } from '../context/TimerContext'
-import type { LoggedSet } from '../types'
+import type { LoggedSet, SetType } from '../types'
 
 export function WeekPage() {
     const { dayId, exerciseId, weekId } = useParams<{
@@ -38,9 +38,14 @@ export function WeekPage() {
     }
 
     const completed = getCompletedSets(week.sets)
+    const effectiveCompletedSets = week.sets.filter(s => s.weight !== null && s.reps !== null && s.type !== 'warmup')
     const total = week.sets.length
     const progress = total > 0 ? (completed / total) * 100 : 0
     const volume = calcTotalVolume(week.sets)
+    
+    const maxWeight = effectiveCompletedSets.length > 0 ? Math.max(...effectiveCompletedSets.map(s => s.weight!)) : 0
+    const bestSet = effectiveCompletedSets.find(s => s.weight === maxWeight)
+    const estimated1RM = bestSet ? calc1RM(bestSet.weight!, bestSet.reps!) : 0
 
     const handleAddSet = () => {
         addSet(day.id, exercise.id, week.id)
@@ -60,6 +65,15 @@ export function WeekPage() {
                 startTimer()
             }
         }
+    }
+
+    const toggleSetType = (setId: string, currentType: SetType | undefined) => {
+        const nextType: Record<string, SetType> = {
+            'normal': 'warmup',
+            'warmup': 'dropset',
+            'dropset': 'normal'
+        }
+        handleUpdateSet(setId, { type: nextType[currentType || 'normal'] })
     }
 
     const handleDeleteSet = (setId: string) => {
@@ -103,6 +117,11 @@ export function WeekPage() {
                             <div>
                                 <p className="text-xl font-bold text-amber-500">{volume > 0 ? volume : '—'}</p>
                                 <p className="text-xs text-gray-500">vol. kg</p>
+                            </div>
+                            <div className="w-px bg-gray-200 dark:bg-white/10" />
+                            <div>
+                                <p className="text-xl font-bold text-purple-600 dark:text-purple-400">{estimated1RM > 0 ? estimated1RM : '—'}</p>
+                                <p className="text-xs text-gray-500">1RM est.</p>
                             </div>
                         </div>
                         {progress === 100 && total > 0 && (
@@ -161,13 +180,22 @@ export function WeekPage() {
                                             : 'bg-gray-50 dark:bg-white/5 border-gray-200/60 dark:border-white/10',
                                     ].join(' ')}
                                 >
-                                    {/* Set number */}
-                                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-colors ${complete ? 'bg-blue-100 dark:bg-blue-500/20' : 'bg-gray-200/80 dark:bg-white/10'}`}>
-                                        {complete
-                                            ? <CheckCircle2 size={18} className="text-blue-600 dark:text-blue-400 animate-bounce-in" />
-                                            : <span className="font-display text-base font-bold text-gray-600 dark:text-gray-400">{i + 1}</span>
-                                        }
-                                    </div>
+                                    {/* Set number / Type toggle */}
+                                    <button
+                                        onClick={() => toggleSetType(set.id, set.type)}
+                                        className={[
+                                            'w-10 h-10 rounded-xl flex flex-col items-center justify-center shrink-0 transition-colors',
+                                            complete 
+                                                ? set.type === 'warmup' ? 'bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30'
+                                                : set.type === 'dropset' ? 'bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/30'
+                                                : 'bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/30'
+                                            : 'bg-gray-200/80 dark:bg-white/10 text-gray-600 dark:text-gray-400 border border-transparent'
+                                        ].join(' ')}
+                                    >
+                                        <span className="font-display text-base font-bold leading-none mt-0.5">{i + 1}</span>
+                                        {set.type === 'warmup' && <span className="text-[9px] uppercase font-bold leading-tight mt-0.5 tracking-wider">Cal</span>}
+                                        {set.type === 'dropset' && <span className="text-[9px] uppercase font-bold leading-tight mt-0.5 tracking-wider">Drop</span>}
+                                    </button>
 
                                     {/* Inputs */}
                                     <div className="flex gap-2 flex-1">
@@ -229,14 +257,21 @@ export function WeekPage() {
                     </button>
                 )}
 
-                {/* RIR hint */}
+                {/* Hints */}
                 {week.sets.length > 0 && (
                     <div className="mt-6 p-4 rounded-2xl bg-amber-50 dark:bg-amber-500/8 border border-amber-200/60 dark:border-amber-500/20">
-                        <div className="flex items-center gap-2">
-                            <Dumbbell size={14} className="text-amber-600 dark:text-amber-400 shrink-0" />
-                            <p className="text-xs text-amber-700 dark:text-amber-300">
-                                <span className="font-semibold">RIR:</span> 0 = al fallo · 1 = 1 rep en reserva · 2 = 2 reps…
-                            </p>
+                        <div className="flex items-start gap-2">
+                            <Dumbbell size={14} className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                            <div className="text-xs text-amber-700 dark:text-amber-300 space-y-2.5">
+                                <p>
+                                    <span className="font-bold uppercase tracking-wide">Calentamiento / Dropset</span><br/>
+                                    Toca el número de la serie (a la izquierda) para cambiar su tipo. Las series de calentamiento (CAL) no suman al volumen total.
+                                </p>
+                                <p>
+                                    <span className="font-bold uppercase tracking-wide">RIR</span><br/>
+                                    0 = al fallo · 1 = 1 rep en reserva · 2 = 2 reps en reserva...
+                                </p>
+                            </div>
                         </div>
                     </div>
                 )}

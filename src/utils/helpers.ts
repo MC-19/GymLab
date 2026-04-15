@@ -46,6 +46,8 @@ export function copyWorkoutDay(day: WorkoutDay): WorkoutDay {
 
 export function calcTotalVolume(sets: LoggedSet[]): number {
     return sets.reduce((sum, s) => {
+        // Ignorar series de calentamiento para el volumen total histórico
+        if (s.type === 'warmup') return sum
         const w = s.weight ?? 0
         const r = s.reps ?? 0
         return sum + w * r
@@ -148,11 +150,14 @@ export function getExerciseProgress(exercise: Exercise): WeekProgress[] {
         .sort((a, b) => a.weekNumber - b.weekNumber)
         .map(week => {
             const completed = week.sets.filter(s => s.weight !== null && s.reps !== null)
-            const maxWeight = completed.length > 0
-                ? Math.max(...completed.map(s => s.weight!))
+            const effectiveCompleted = completed.filter(s => s.type !== 'warmup')
+
+            // Usamos solo series efectivas para buscar el peso máximo
+            const maxWeight = effectiveCompleted.length > 0
+                ? Math.max(...effectiveCompleted.map(s => s.weight!))
                 : 0
-            const bestSet = completed.find(s => s.weight === maxWeight)
-            const volume = calcTotalVolume(completed)
+            const bestSet = effectiveCompleted.find(s => s.weight === maxWeight)
+            const volume = calcTotalVolume(completed) // ya filtra warmups internamente
 
             let isPR = false
             if (maxWeight > 0 && maxWeight > allTimeMax) {
@@ -166,7 +171,7 @@ export function getExerciseProgress(exercise: Exercise): WeekProgress[] {
                 label: week.label ?? `S${week.weekNumber}`,
                 maxWeight,
                 totalVolume: volume,
-                totalSets: completed.length,
+                totalSets: effectiveCompleted.length, // Mostrar # de series efectivas
                 estimated1RM: bestSet ? calc1RM(bestSet.weight!, bestSet.reps!) : 0,
                 isPR
             }

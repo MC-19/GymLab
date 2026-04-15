@@ -57,7 +57,8 @@ export function HistoryPage() {
             })
     )
 
-    const hasAnyData = filteredDays.some(d => d.exercises.some(e => e.weeks.length > 0))
+    const globalHasAnyData = days.some(d => d.exercises.some(e => e.weeks.length > 0))
+    const filteredHasAnyData = filteredDays.some(d => d.exercises.some(e => e.weeks.length > 0))
 
     return (
         <div className="page-enter">
@@ -70,7 +71,7 @@ export function HistoryPage() {
             </div>
 
             <div className="px-5 pt-5 pb-4 max-w-lg mx-auto">
-                {!hasAnyData ? (
+                {!globalHasAnyData ? (
                     <EmptyState
                         icon={<TrendingUp size={28} />}
                         title="Sin datos aún"
@@ -78,7 +79,7 @@ export function HistoryPage() {
                     />
                 ) : (
                     <>
-                        {/* Stats globales */}
+                        {/* Stats globales (siempre visibles, incluso si es 0 por el filtro) */}
                         <div className="grid grid-cols-3 gap-3 mb-6">
                             <StatCard label="Ejercicios" value={String(totalExercises)} icon={<Dumbbell size={16} />} />
                             <StatCard label="Semanas" value={String(totalWeeks)} icon={<BarChart2 size={16} />} />
@@ -90,7 +91,7 @@ export function HistoryPage() {
                             />
                         </div>
 
-                        {/* Filtros de Rutina (Pills) */}
+                        {/* Filtros de Rutina (Pills) NUNCA desaparecen */}
                         <div className="flex gap-2 overflow-x-auto pb-2 mb-4 scrollbar-hide -mx-5 px-5">
                             <button
                                 onClick={() => setDayFilter('all')}
@@ -116,6 +117,15 @@ export function HistoryPage() {
                                 </button>
                             ))}
                         </div>
+
+                        {!filteredHasAnyData ? (
+                            <EmptyState
+                                icon={<TrendingUp size={28} />}
+                                title="Sin datos"
+                                description="Esta rutina aún no tiene series completadas."
+                            />
+                        ) : (
+                            <>
 
                         {/* Filtros de tiempo */}
                         <div className="flex bg-gray-100 dark:bg-white/5 p-1 rounded-xl mb-4">
@@ -183,6 +193,8 @@ export function HistoryPage() {
                             <div className="text-center py-10 text-gray-400 dark:text-gray-600 text-sm">
                                 Añade al menos 1 semana a un ejercicio para ver su historial
                             </div>
+                        )}
+                            </>
                         )}
                     </>
                 )}

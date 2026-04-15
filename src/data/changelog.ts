@@ -1,4 +1,4 @@
-import { Sparkles, Dumbbell, Image as ImageIcon, Globe2, Link2, CheckCircle2, Layers, ClockFading } from 'lucide-react'
+import { Sparkles, Dumbbell, Image as ImageIcon, Globe2, Link2, CheckCircle2, Layers, ClockFading, TrendingUp } from 'lucide-react'
 
 export interface ChangelogFeature {
     icon: any
@@ -14,6 +14,23 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+    {
+        version: '1.4.0',
+        date: new Date().toISOString().split('T')[0],
+        title: 'Mide tu 1RM Est. y limpia tu volumen 📊',
+        features: [
+            {
+                icon: Dumbbell,
+                title: 'Tipos de Serie (Normal, Dropset, Calentamiento)',
+                description: 'Toca el número de la serie en la vista semanal para cambiar su tipo. ¡Útil para que las series de calentamiento no saturen tu estadística de "tonelaje" histórico!'
+            },
+            {
+                icon: TrendingUp,
+                title: 'Cálculo Inteligente de 1RM',
+                description: 'La app ahora usa la fórmula de Epley en tiempo real para estimar tu Repetición Máxima (1RM) basándose en la mejor serie de máximo esfuerzo del día.'
+            }
+        ]
+    },
     {
         version: '1.3.0',
         date: new Date().toISOString().split('T')[0],

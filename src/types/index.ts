@@ -12,8 +12,11 @@ export interface CatalogExercise {
     gifUrl?: string
 }
 
+export type SetType = 'warmup' | 'normal' | 'dropset'
+
 export interface LoggedSet {
     id: string
+    type?: SetType          // Si es undefined, se asume 'normal' para retrocompatibilidad
     weight: number | null   // null = campo vacío
     reps: number | null
     rir: number | null
