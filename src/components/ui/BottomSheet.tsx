@@ -8,10 +8,11 @@ interface BottomSheetProps {
     onClose: () => void
     title?: string
     className?: string
+    noPadding?: boolean
     children: ReactNode
 }
 
-export function BottomSheet({ open, onClose, title, className = '', children }: BottomSheetProps) {
+export function BottomSheet({ open, onClose, title, className = '', noPadding, children }: BottomSheetProps) {
     const keyboardHeight = useKeyboardHeight()
 
     useEffect(() => {
@@ -38,10 +39,10 @@ export function BottomSheet({ open, onClose, title, className = '', children }: 
                 className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in"
                 onClick={onClose}
             />
-            {/* Sheet — offset up by keyboard height so it stays above the keyboard */}
+            {/* Sheet — use paddingBottom instead of marginBottom so max-h maintains its position */}
             <div
-                className={`relative w-full bg-white dark:bg-gray-900 rounded-t-3xl shadow-2xl animate-slide-up max-h-[92dvh] flex flex-col transition-[bottom] duration-100 ${className}`}
-                style={{ marginBottom: keyboardHeight }}
+                className={`relative w-full bg-white dark:bg-gray-900 rounded-t-3xl shadow-2xl animate-slide-up max-h-[92dvh] flex flex-col transition-[padding] duration-100 ${className}`}
+                style={{ paddingBottom: keyboardHeight }}
             >
                 {/* Handle */}
                 <div className="flex justify-center pt-3 pb-1 shrink-0">
@@ -55,7 +56,7 @@ export function BottomSheet({ open, onClose, title, className = '', children }: 
                         </IconButton>
                     </div>
                 )}
-                <div className="overflow-y-auto px-6 py-4 flex-1 pb-[max(1rem,env(safe-area-inset-bottom))]">
+                <div className={`overflow-y-auto flex-1 ${noPadding ? 'pb-[max(1rem,env(safe-area-inset-bottom))]' : 'px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]'}`}>
                     {children}
                 </div>
             </div>

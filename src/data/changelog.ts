@@ -1,4 +1,4 @@
-import { Sparkles, Dumbbell, Image as ImageIcon, Globe2, Link2, CheckCircle2, Layers, ClockFading, TrendingUp } from 'lucide-react'
+import { Sparkles, Dumbbell, Image as ImageIcon, Globe2, Link2, CheckCircle2, Layers, ClockFading, TrendingUp, SaveAll, BellOff } from 'lucide-react'
 
 export interface ChangelogFeature {
     icon: any
@@ -14,6 +14,28 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+    {
+        version: '1.4.1',
+        date: new Date().toISOString().split('T')[0],
+        title: 'Mejoras de migración y Temporizador fluido 🚀',
+        features: [
+            {
+                icon: SaveAll,
+                title: 'Importación y Migración Total',
+                description: 'El sistema de exportación ahora crea un backup absoluto. Respalda tus programas, estadísticas y configuraciones completas para migrar de dispositivo sin perder absolutamente nada.'
+            },
+            {
+                icon: ClockFading,
+                title: 'Temporizador Silencioso (Tipo PiP)',
+                description: '¿El temporizador tapa tu pantalla? Deslízalo a un lado. Ahora se convierte en una discreta "píldora" anclada al borde del móvil para que puedas seguir gestionando tu rutina.'
+            },
+            {
+                icon: BellOff,
+                title: 'Interfaz Libre de Ruido',
+                description: 'Hemos limpiado tu pantalla. Eliminamos las molestas notificaciones emergentes repetitivas al navegar o gestionar programas o rutinas.'
+            }
+        ]
+    },
     {
         version: '1.4.0',
         date: new Date().toISOString().split('T')[0],

@@ -29,10 +29,20 @@ export function SettingsPage() {
 
     // ── Exportar ──────────────────────────────────────────────────────────────
     const handleExport = () => {
+        const exportedData: Record<string, string> = {}
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i)
+            if (key && key.startsWith('gymlab_')) {
+                exportedData[key] = localStorage.getItem(key) || ''
+            }
+        }
+
         const backup = {
-            version: 1,
+            version: 2,
             exportedAt: new Date().toISOString(),
+            // Legacy field para mantener retrocompatibilidad o lectura de V1
             days,
+            localStorage: exportedData
         }
         const json = JSON.stringify(backup, null, 2)
         const blob = new Blob([json], { type: 'application/json' })
@@ -82,7 +92,38 @@ export function SettingsPage() {
         if (!importedData) return
         try {
             const parsed = JSON.parse(importedData)
-            localStorage.setItem('gymlab_days', JSON.stringify(parsed.days))
+
+            if (parsed.version === 2 && parsed.localStorage) {
+                // Remove existing gymlab_ keys to clean up before importing
+                const keysToRemove = []
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i)
+                    if (key && key.startsWith('gymlab_')) {
+                        keysToRemove.push(key)
+                    }
+                }
+                keysToRemove.forEach(k => localStorage.removeItem(k))
+
+                // Restore new keys from backup
+                for (const [key, value] of Object.entries(parsed.localStorage)) {
+                    if (typeof value === 'string') {
+                        localStorage.setItem(key, value)
+                    }
+                }
+            } else if (parsed.days) {
+                // V1 migration handling
+                const defaultProgram = {
+                    id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
+                    name: 'Backup Importado',
+                    createdAt: new Date().toISOString(),
+                    isArchived: false,
+                    days: parsed.days,
+                }
+                localStorage.setItem('gymlab_programs', JSON.stringify([defaultProgram]))
+                localStorage.setItem('gymlab_active_program_id', defaultProgram.id)
+                localStorage.removeItem('gymlab_days')
+            }
+
             showToast('Datos restaurados. Recargando…', 'success')
             setTimeout(() => window.location.reload(), 800)
         } catch {
@@ -285,7 +326,7 @@ export function SettingsPage() {
                     <div className="flex flex-col items-center gap-3 py-2">
                         <img src="/icons/icon-512.png" alt="GymLab" className="h-40 w-auto object-contain" />
                         <div className="space-y-1 text-center text-sm text-gray-600 dark:text-gray-500">
-                            <p>Versión <span className="font-medium text-gray-900 dark:text-gray-300">1.4.0</span></p>
+                            <p>Versión <span className="font-medium text-gray-900 dark:text-gray-300">1.4.1</span></p>
                             <p>Datos guardados localmente en tu dispositivo.</p>
                             <p className="text-xs text-gray-500 dark:text-gray-600">Hecho con ❤️ para personas que entrenan en serio.</p>
                         </div>

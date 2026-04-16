@@ -79,8 +79,9 @@ export function ExerciseCatalogSheet({ open, onClose, onSelect, title = "Añadir
             title={title}
             // Make it very tall to act almost like a full-screen modal
             className="h-[90vh]"
+            noPadding
         >
-            <div className="flex flex-col h-full bg-white dark:bg-gray-900 pb-24">
+            <div className="flex flex-col h-full bg-white dark:bg-gray-900 pb-4">
                 {/* Fixed Search and Filter Header */}
                 <div className="px-4 pb-3 space-y-3 shrink-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md sticky top-0 z-10 border-b border-gray-100 dark:border-white/5">
                     <div className="relative">

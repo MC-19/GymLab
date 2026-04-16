@@ -37,7 +37,6 @@ export function ProgramsPage() {
         createProgram(name)
         setNewName('')
         setShowCreateModal(false)
-        showToast(`"${name}" creado y activado`, 'success')
         navigate('/routines')
     }
 
@@ -46,28 +45,22 @@ export function ProgramsPage() {
         const name = renameTarget.name.trim()
         if (!name) return
         updateProgram(renameTarget.id, { name })
-        showToast('Nombre actualizado', 'success')
         setRenameTarget(null)
     }
 
     const handleArchive = (id: string) => {
-        const prog = programs.find(p => p.id === id)
         archiveProgram(id)
-        showToast(`"${prog?.name}" archivado`, 'info')
         setArchiveTarget(null)
     }
 
     const handleDelete = (id: string) => {
-        const prog = programs.find(p => p.id === id)
         deleteProgram(id)
-        showToast(`"${prog?.name}" eliminado`, 'info')
         setDeleteTarget(null)
     }
 
     const handleRestoreAndActivate = (id: string) => {
         updateProgram(id, { isArchived: false })
         setActiveProgram(id)
-        showToast('Programa restaurado y activado', 'success')
     }
 
     const ProgramCard = ({ program, archived = false }: { program: typeof programs[0]; archived?: boolean }) => {
@@ -84,7 +77,6 @@ export function ProgramsPage() {
                     onClick={() => {
                         if (!archived) {
                             setActiveProgram(program.id)
-                            showToast(`Programa: ${program.name}`, 'success')
                             navigate('/routines')
                         }
                     }}
@@ -148,7 +140,7 @@ export function ProgramsPage() {
                     ) : (
                         !isActive && (
                             <button
-                                onClick={() => { setActiveProgram(program.id); showToast(`Programa: ${program.name}`, 'success'); navigate('/routines') }}
+                                onClick={() => { setActiveProgram(program.id); navigate('/routines') }}
                                 className="text-xs font-medium text-blue-600 dark:text-blue-400 px-3 py-1.5 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors"
                             >
                                 Activar

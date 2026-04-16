@@ -48,25 +48,21 @@ export function RoutinesPage() {
         addDay(name)
         setNewDayName('')
         setShowAddModal(false)
-        showToast(`"${name}" añadido`, 'success')
     }
 
     const handleDelete = (dayId: string) => {
         const day = days.find(d => d.id === dayId)
         deleteDay(dayId)
         setDeleteConfirm(null)
-        showToast(`"${day?.name}" eliminado`, 'info')
     }
 
     const handleDuplicate = (dayId: string) => {
-        const copy = duplicateDay(dayId)
-        if (copy) showToast(`"${copy.name}" creado`, 'success')
+        duplicateDay(dayId)
     }
 
     const handleReset = () => {
         resetRotation()
         setShowResetConfirm(false)
-        showToast('Rotación reiniciada al Día 1', 'info')
     }
 
     const handleRename = () => {
@@ -74,7 +70,6 @@ export function RoutinesPage() {
         const name = renameDay.name.trim()
         if (!name) return
         updateDay(renameDay.id, { name })
-        showToast('Nombre actualizado', 'success')
         setRenameDay(null)
     }
 
