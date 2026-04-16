@@ -76,31 +76,38 @@ export function ExerciseCatalogSheet({ open, onClose, onSelect, title = "Añadir
         <BottomSheet
             open={open}
             onClose={onClose}
-            title={title}
-            // Make it very tall to act almost like a full-screen modal
-            className="h-[90vh]"
+            className="h-[95vh]"
             noPadding
         >
-            <div className="flex flex-col h-full bg-white dark:bg-gray-900 pb-4">
+            <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-900 pb-4">
                 {/* Fixed Search and Filter Header */}
-                <div className="px-4 pb-3 space-y-3 shrink-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md sticky top-0 z-10 border-b border-gray-100 dark:border-white/5">
-                    <div className="relative">
-                        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                        <input
-                            type="text"
-                            placeholder="Buscar ejercicio..."
-                            value={search}
-                            onChange={e => setSearch(e.target.value)}
-                            className="w-full pl-10 pr-4 py-3 bg-gray-100 dark:bg-white/5 border-transparent rounded-2xl text-[15px] focus:bg-white dark:focus:bg-gray-800 focus:ring-2 focus:ring-blue-500 transition-all outline-none text-gray-900 dark:text-white"
-                        />
-                        {search && (
-                            <button
-                                onClick={() => setSearch('')}
-                                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 p-1"
-                            >
-                                <X size={16} />
-                            </button>
-                        )}
+                <div className="px-4 pb-3 pt-3 space-y-3 shrink-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md sticky top-0 z-10 border-b border-gray-200/60 dark:border-white/5">
+                    
+                    <div className="flex items-center gap-3">
+                        <div className="relative flex-1">
+                            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                            <input
+                                type="text"
+                                placeholder={title ? `${title}...` : "Buscar ejercicio..."}
+                                value={search}
+                                onChange={e => setSearch(e.target.value)}
+                                className="w-full pl-10 pr-9 py-2.5 bg-gray-100 dark:bg-white/5 border border-transparent rounded-2xl text-[15px] focus:bg-white dark:focus:bg-gray-800 focus:border-blue-500/40 focus:shadow-sm transition-all outline-none text-gray-900 dark:text-white"
+                            />
+                            {search && (
+                                <button
+                                    onClick={() => setSearch('')}
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 p-1.5 hover:text-gray-600 dark:hover:text-gray-200"
+                                >
+                                    <X size={16} />
+                                </button>
+                            )}
+                        </div>
+                        <button 
+                            onClick={onClose}
+                            className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 dark:bg-white/5 text-gray-500 hover:text-gray-900 hover:bg-gray-200 dark:hover:text-white dark:hover:bg-white/10 transition-colors shrink-0"
+                        >
+                            <X size={18} />
+                        </button>
                     </div>
 
                     <div className="flex gap-2 overflow-x-auto pb-1 hide-scrollbar -mx-4 px-4 snap-x">
