@@ -1,7 +1,8 @@
-import { createContext, useContext, useEffect, useState, useRef, type ReactNode } from 'react'
+/* eslint-disable react-refresh/only-export-components */
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import { useAudioBeep } from '../hooks/useAudioBeep'
 import { useLocalStorage } from '../hooks/useLocalStorage'
 import { useToast } from '../hooks/useToast'
-import { useAudioBeep } from '../hooks/useAudioBeep'
 
 export interface TimerState {
     isActive: boolean
@@ -29,9 +30,6 @@ export function TimerProvider({ children }: { children: ReactNode }) {
     const [timeRemaining, setTimeRemaining] = useState(0)
     const [endTime, setEndTime] = useState<number | null>(null)
     
-    // Almacén para el audio silencioso que mantiene vivo el JS en iOS
-    const silentAudioRef = useRef<HTMLAudioElement | null>(null)
-
     // Load from memory if page reloads during active timer
     useEffect(() => {
         const storedEnd = sessionStorage.getItem('gymlab_timer_end')
@@ -43,6 +41,7 @@ export function TimerProvider({ children }: { children: ReactNode }) {
             const remaining = Math.round((end - Date.now()) / 1000)
 
             if (remaining > 0) {
+                // eslint-disable-next-line react-hooks/set-state-in-effect
                 setDuration(dur)
                 setEndTime(end)
                 setTimeRemaining(remaining)

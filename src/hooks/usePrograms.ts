@@ -1,7 +1,7 @@
 import { useCallback } from 'react'
-import { useLocalStorage } from './useLocalStorage'
 import type { TrainingProgram, WorkoutDay } from '../types'
 import { generateId } from '../utils/helpers'
+import { useLocalStorage } from './useLocalStorage'
 
 const PROGRAMS_KEY = 'gymlab_programs'
 const ACTIVE_PROGRAM_KEY = 'gymlab_active_program_id'
@@ -12,7 +12,9 @@ function loadPrograms(): TrainingProgram[] {
     try {
         // If new format already exists, use it
         const raw = localStorage.getItem(PROGRAMS_KEY)
-        if (raw) return JSON.parse(raw) as TrainingProgram[]
+        if (raw) {
+            return JSON.parse(raw) as TrainingProgram[]
+        }
 
         // Migration: wrap existing days into a default program
         const legacyRaw = localStorage.getItem(LEGACY_DAYS_KEY)

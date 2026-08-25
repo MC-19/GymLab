@@ -1,22 +1,22 @@
+import { ArrowDown, ArrowUp, CheckCircle2, ChevronLeft, ChevronRight, Dumbbell, Pencil, Plus, Search, Trash2 } from 'lucide-react'
 import { useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { MoreVertical, ChevronRight, Plus, Dumbbell, History, Scale, TrendingUp, Calendar, Trash2, Edit2, Check, X, Search, Info, ChevronLeft, Pencil, CheckCircle2, ArrowUp, ArrowDown } from 'lucide-react'
-import { normalizeString } from '../utils/stringUtils'
-import { useWorkoutContext } from '../context/WorkoutContext'
-import { Button } from '../components/ui/Button'
-import { IconButton } from '../components/ui/IconButton'
-import { BottomSheet } from '../components/ui/BottomSheet'
-import { Input } from '../components/ui/Input'
-import { EmptyState } from '../components/ui/EmptyState'
-import { Badge } from '../components/ui/Badge'
-import { ProgressBar } from '../components/ui/ProgressBar'
-import { Modal } from '../components/ui/Modal'
-import { ThemeToggle } from '../components/ui/ThemeToggle'
-import { getCompletedSets } from '../utils/helpers'
-import { useDocumentTitle } from '../hooks/useDocumentTitle'
+import { useNavigate, useParams } from 'react-router-dom'
 import { ExerciseCatalogSheet } from '../components/exercises/ExerciseCatalogSheet'
+import { Badge } from '../components/ui/Badge'
+import { BottomSheet } from '../components/ui/BottomSheet'
+import { Button } from '../components/ui/Button'
+import { EmptyState } from '../components/ui/EmptyState'
+import { IconButton } from '../components/ui/IconButton'
+import { Input } from '../components/ui/Input'
+import { Modal } from '../components/ui/Modal'
+import { ProgressBar } from '../components/ui/ProgressBar'
+import { ThemeToggle } from '../components/ui/ThemeToggle'
+import { useWorkoutContext } from '../context/WorkoutContext'
 import { EXERCISE_CATALOG } from '../data/exerciseCatalog'
-import type { MuscleGroup, Exercise } from '../types'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
+import type { Exercise, MuscleGroup } from '../types'
+import { getCompletedSets } from '../utils/helpers'
+import { normalizeString } from '../utils/stringUtils'
 
 const MUSCLE_GROUPS: MuscleGroup[] = [
     'Pecho', 'Espalda', 'Hombros', 'Bíceps', 'Tríceps',
@@ -28,7 +28,7 @@ const MUSCLE_GROUPS: MuscleGroup[] = [
 export function WorkoutDayPage() {
     const { dayId } = useParams<{ dayId: string }>()
     const navigate = useNavigate()
-    const { days, updateDay, deleteExercise, addExercise, updateExercise, reorderExercises, completeSession, currentDayIndex } = useWorkoutContext()
+    const { days, updateDay, deleteExercise, addExercise, updateExercise, reorderExercises, completeSession } = useWorkoutContext()
 
     const day = days.find(d => d.id === dayId)
 
@@ -89,7 +89,6 @@ export function WorkoutDayPage() {
     }
 
     const handleDelete = (exId: string) => {
-        const ex = day.exercises.find(e => e.id === exId)
         deleteExercise(day.id, exId)
         setDeleteConfirm(null)
     }
@@ -275,8 +274,6 @@ export function WorkoutDayPage() {
                         {/* Finalizar entrenamiento */}
                         <button
                             onClick={() => {
-                                const nextIndex = (currentDayIndex + 1) % days.length
-                                const nextDay = days[nextIndex]
                                 completeSession(day.id, days.length)
                                 navigate('/')
                             }}

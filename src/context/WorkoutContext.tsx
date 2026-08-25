@@ -1,10 +1,11 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, type ReactNode } from 'react'
-import { useWorkout } from '../hooks/useWorkout'
 import { usePrograms } from '../hooks/usePrograms'
 import { useRotation } from '../hooks/useRotation'
-import { useToast } from '../hooks/useToast'
 import type { Toast } from '../hooks/useToast'
-import type { WorkoutDay, Exercise, TrainingWeek, LoggedSet, CompletedSession, TrainingProgram } from '../types'
+import { useToast } from '../hooks/useToast'
+import { useWorkout } from '../hooks/useWorkout'
+import type { CompletedSession, Exercise, LoggedSet, TrainingProgram, TrainingWeek, WorkoutDay } from '../types'
 
 interface WorkoutContextType {
     days: WorkoutDay[]

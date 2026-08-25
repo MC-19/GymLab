@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect } from 'react'
+import { ChevronRight, Minus, Plus, Timer, X } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 import { useTimer } from '../../context/TimerContext'
-import { X, Plus, Minus, ChevronRight, Timer } from 'lucide-react'
 
 export function TimerWidget() {
     const { isActive, timeRemaining, duration, stopTimer, addTime } = useTimer()
@@ -9,6 +9,8 @@ export function TimerWidget() {
 
     // Reset minimized state when timer finishes or stops
     useEffect(() => {
+        // The timer widget must reset local UI state when the external timer stops.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         if (!isActive) setIsMinimized(false)
     }, [isActive])
 

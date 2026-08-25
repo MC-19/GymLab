@@ -1,13 +1,13 @@
-import { useState, useEffect } from 'react'
+import { Bell, CalendarDays, ChevronRight, ListChecks, Shuffle } from 'lucide-react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { CalendarDays, ChevronRight, ListChecks, Shuffle, Bell } from 'lucide-react'
-import { useWorkoutContext } from '../context/WorkoutContext'
-import { ThemeToggle } from '../components/ui/ThemeToggle'
 import { OnboardingCard } from '../components/ui/OnboardingCard'
-import { calculateWeeklyStreak } from '../utils/helpers'
-import { useTimer } from '../context/TimerContext'
+import { ThemeToggle } from '../components/ui/ThemeToggle'
 import { WhatsNewModal } from '../components/ui/WhatsNewModal'
+import { useTimer } from '../context/TimerContext'
+import { useWorkoutContext } from '../context/WorkoutContext'
 import { LATEST_VERSION } from '../data/changelog'
+import { calculateWeeklyStreak } from '../utils/helpers'
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -53,14 +53,9 @@ export function Dashboard() {
 
     const [showDayPicker, setShowDayPicker] = useState(false)
     const [showChangelog, setShowChangelog] = useState(false)
-    const [hasUnseenUpdates, setHasUnseenUpdates] = useState(false)
-
-    useEffect(() => {
-        const lastSeen = localStorage.getItem('GYMLAB_LAST_VERSION_SEEN')
-        if (lastSeen !== LATEST_VERSION) {
-            setHasUnseenUpdates(true)
-        }
-    }, [])
+    const [hasUnseenUpdates, setHasUnseenUpdates] = useState(
+        () => localStorage.getItem('GYMLAB_LAST_VERSION_SEEN') !== LATEST_VERSION
+    )
 
     const handleOpenChangelog = () => {
         setHasUnseenUpdates(false)

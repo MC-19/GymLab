@@ -5,7 +5,7 @@ export function useAudioBeep() {
 
     const getAudioContext = () => {
         if (!audioCtxRef.current) {
-            // @ts-ignore - Vendor prefixed for older iOS Safari
+            // @ts-expect-error Vendor prefixed for older iOS Safari
             const AudioContextClass = window.AudioContext || window.webkitAudioContext
             audioCtxRef.current = new AudioContextClass()
         }

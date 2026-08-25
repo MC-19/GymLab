@@ -1,10 +1,9 @@
-import { useState, useMemo } from 'react'
-import { Plus, Search, Dumbbell, Play, X, ChevronRight, Check } from 'lucide-react'
+import { ChevronRight, Dumbbell, Play, Plus, Search, X } from 'lucide-react'
+import { useMemo, useState } from 'react'
 import { EXERCISE_CATALOG } from '../../data/exerciseCatalog'
-import type { MuscleGroup, CatalogExercise } from '../../types'
+import type { CatalogExercise, MuscleGroup } from '../../types'
 import { BottomSheet } from '../ui/BottomSheet'
 import { Input } from '../ui/Input'
-import { Badge } from '../ui/Badge'
 
 interface ExerciseCatalogSheetProps {
     open: boolean

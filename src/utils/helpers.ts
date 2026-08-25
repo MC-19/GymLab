@@ -1,7 +1,20 @@
-import type { WorkoutDay, Exercise, LoggedSet } from '../types'
+import type { Exercise, LoggedSet, TrainingWeek, WorkoutDay } from '../types'
 
 export function generateId(): string {
     return crypto.randomUUID()
+}
+
+export function findExercise(days: WorkoutDay[], dayId: string | undefined, exerciseId: string | undefined): Exercise | undefined {
+    return days.find(day => day.id === dayId)?.exercises.find(exercise => exercise.id === exerciseId)
+}
+
+export function findTrainingWeek(
+    days: WorkoutDay[],
+    dayId: string | undefined,
+    exerciseId: string | undefined,
+    weekId: string | undefined,
+): TrainingWeek | undefined {
+    return findExercise(days, dayId, exerciseId)?.weeks.find(week => week.id === weekId)
 }
 
 export function formatDate(iso: string): string {

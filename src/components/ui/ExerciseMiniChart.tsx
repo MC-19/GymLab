@@ -12,7 +12,7 @@ const iW = W - PAD.left - PAD.right
 const iH = H - PAD.top - PAD.bottom
 
 export function ExerciseMiniChart({ progress }: ExerciseMiniChartProps) {
-    const { minW, maxW, range, pts, line, area } = useMemo(() => {
+    const { pts, line, area } = useMemo(() => {
         if (progress.length === 0) return { minW: 0, maxW: 0, range: 1, pts: [], line: '', area: '' }
         
         // Si hay solo un punto, lo duplicamos para poder dibujar una línea plana

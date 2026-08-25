@@ -1,12 +1,12 @@
+import { Archive, CheckCircle2, ChevronRight, Dumbbell, FolderOpen, Pencil, Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Dumbbell, CheckCircle2, Archive, Trash2, Pencil, ChevronRight, FolderOpen } from 'lucide-react'
-import { useWorkoutContext } from '../context/WorkoutContext'
-import { ThemeToggle } from '../components/ui/ThemeToggle'
 import { Button } from '../components/ui/Button'
-import { Modal } from '../components/ui/Modal'
-import { Input } from '../components/ui/Input'
 import { EmptyState } from '../components/ui/EmptyState'
+import { Input } from '../components/ui/Input'
+import { Modal } from '../components/ui/Modal'
+import { ThemeToggle } from '../components/ui/ThemeToggle'
+import { useWorkoutContext } from '../context/WorkoutContext'
 
 export function ProgramsPage() {
     const navigate = useNavigate()
@@ -18,7 +18,6 @@ export function ProgramsPage() {
         updateProgram,
         archiveProgram,
         deleteProgram,
-        showToast,
     } = useWorkoutContext()
 
     const [showCreateModal, setShowCreateModal] = useState(false)

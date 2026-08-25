@@ -1,6 +1,5 @@
+import { CheckCircle2, Download, Smartphone, Sparkles } from 'lucide-react'
 import { useState } from 'react'
-import { Sparkles, CheckCircle2, Smartphone, Download } from 'lucide-react'
-import { useAudioBeep } from '../../hooks/useAudioBeep'
 
 interface OnboardingCardProps {
     onSelect: (count: number, restSeconds: number) => Promise<void>
@@ -14,7 +13,6 @@ export function OnboardingCard({ onSelect }: OnboardingCardProps) {
     const [selectedDays, setSelectedDays] = useState<number | null>(null)
     const [selectedRest, setSelectedRest] = useState<number | null>(null)
     const [isCreating, setIsCreating] = useState(false)
-    const { playStartBeep } = useAudioBeep()
 
     const handleSelectDays = (count: number) => {
         setSelectedDays(count)

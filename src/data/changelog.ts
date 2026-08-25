@@ -1,7 +1,7 @@
-import { Sparkles, Dumbbell, Image as ImageIcon, Globe2, Link2, CheckCircle2, Layers, ClockFading, TrendingUp, SaveAll, BellOff } from 'lucide-react'
+import { BellOff, CheckCircle2, ClockFading, Dumbbell, Globe2, Image as ImageIcon, Layers, Link2, SaveAll, Sparkles, TrendingUp, type LucideIcon } from 'lucide-react'
 
 export interface ChangelogFeature {
-    icon: any
+    icon: LucideIcon
     title: string
     description: string
 }

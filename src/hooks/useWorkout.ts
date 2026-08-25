@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
-import type { WorkoutDay, Exercise, TrainingWeek, LoggedSet } from '../types'
-import { generateId, copyWorkoutDay } from '../utils/helpers'
+import type { Exercise, LoggedSet, TrainingWeek, WorkoutDay } from '../types'
+import { copyWorkoutDay, generateId } from '../utils/helpers'
 
 export function useWorkout(
     days: WorkoutDay[],
@@ -109,16 +109,18 @@ export function useWorkout(
     // ── Weeks ─────────────────────────────────────────────────────────────────
 
     const addWeek = useCallback((dayId: string, exerciseId: string) => {
-        let newWeek!: TrainingWeek
+        const newWeekId = generateId()
+        const exercise = days.find(day => day.id === dayId)?.exercises.find(ex => ex.id === exerciseId)
+        const nextNumber = exercise && exercise.weeks.length > 0
+            ? Math.max(...exercise.weeks.map(week => week.weekNumber)) + 1
+            : 1
+
         updateExerciseInDay(dayId, exerciseId, ex => {
-            const nextNumber = ex.weeks.length > 0
-                ? Math.max(...ex.weeks.map(w => w.weekNumber)) + 1
-                : 1
-            newWeek = { id: generateId(), weekNumber: nextNumber, sets: [] }
+            const newWeek: TrainingWeek = { id: newWeekId, weekNumber: nextNumber, sets: [] }
             return { ...ex, weeks: [...ex.weeks, newWeek] }
         })
-        return newWeek
-    }, [updateExerciseInDay])
+        return { id: newWeekId, weekNumber: nextNumber, sets: [] }
+    }, [days, updateExerciseInDay])
 
     const deleteWeek = useCallback((dayId: string, exerciseId: string, weekId: string) => {
         updateExerciseInDay(dayId, exerciseId, ex => ({

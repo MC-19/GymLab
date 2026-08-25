@@ -1,18 +1,14 @@
-import { useState } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
-import { Plus, Dumbbell, Copy, Trash2, ChevronRight, RotateCcw, Pencil, X, Zap, ArrowUp, ArrowDown } from 'lucide-react'
-import { useWorkoutContext } from '../context/WorkoutContext'
-import { ThemeToggle } from '../components/ui/ThemeToggle'
-import { Button } from '../components/ui/Button'
-import { IconButton } from '../components/ui/IconButton'
-import { Modal } from '../components/ui/Modal'
-import { Input } from '../components/ui/Input'
-import { EmptyState } from '../components/ui/EmptyState'
+import { ArrowDown, ArrowUp, ChevronRight, Copy, Dumbbell, Pencil, Plus, RotateCcw, Trash2, X, Zap } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { Badge } from '../components/ui/Badge'
-
-// ── Module-level flag so the banner survives route changes within the session ──
-// Set to true when coming from onboarding, set to false when dismissed.
-let _showOnboardingBanner = false
+import { Button } from '../components/ui/Button'
+import { EmptyState } from '../components/ui/EmptyState'
+import { IconButton } from '../components/ui/IconButton'
+import { Input } from '../components/ui/Input'
+import { Modal } from '../components/ui/Modal'
+import { ThemeToggle } from '../components/ui/ThemeToggle'
+import { useWorkoutContext } from '../context/WorkoutContext'
 
 export function RoutinesPage() {
     const navigate = useNavigate()
@@ -23,22 +19,20 @@ export function RoutinesPage() {
         activeProgram,
     } = useWorkoutContext()
 
-    // Detect fresh arrival from onboarding and arm the banner
-    if (location.state?.fromOnboarding === true) {
-        _showOnboardingBanner = true
-        // Clear the state so a back-navigation doesn't re-arm it
-        window.history.replaceState({}, '')
-    }
-
     const [showAddModal, setShowAddModal] = useState(false)
     const [newDayName, setNewDayName] = useState('')
     const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
     const [showResetConfirm, setShowResetConfirm] = useState(false)
     const [renameDay, setRenameDay] = useState<{ id: string; name: string } | null>(null)
-    const [bannerVisible, setBannerVisible] = useState(() => _showOnboardingBanner)
+    const [bannerVisible, setBannerVisible] = useState(() => location.state?.fromOnboarding === true)
+
+    useEffect(() => {
+        if (location.state?.fromOnboarding === true) {
+            window.history.replaceState({}, '')
+        }
+    }, [location.state])
 
     const dismissBanner = () => {
-        _showOnboardingBanner = false
         setBannerVisible(false)
     }
 
@@ -51,7 +45,6 @@ export function RoutinesPage() {
     }
 
     const handleDelete = (dayId: string) => {
-        const day = days.find(d => d.id === dayId)
         deleteDay(dayId)
         setDeleteConfirm(null)
     }
