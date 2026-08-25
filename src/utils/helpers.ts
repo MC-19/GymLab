@@ -17,6 +17,49 @@ export function findTrainingWeek(
     return findExercise(days, dayId, exerciseId)?.weeks.find(week => week.id === weekId)
 }
 
+export function getLatestTrainingWeek(exercise: Exercise): TrainingWeek | undefined {
+    return [...exercise.weeks].sort((a, b) => b.weekNumber - a.weekNumber)[0]
+}
+
+export function createEmptyTrainingWeek(exercise: Exercise): TrainingWeek {
+    const latestWeek = getLatestTrainingWeek(exercise)
+    return {
+        id: generateId(),
+        weekNumber: latestWeek ? latestWeek.weekNumber + 1 : 1,
+        sets: [],
+    }
+}
+
+export function shouldSuggestWeightIncrease(week: TrainingWeek | undefined): boolean {
+    if (!week) return false
+
+    const completedSets = week.sets.filter(set => set.weight !== null && set.reps !== null)
+    if (completedSets.length === 0) return false
+
+    const setsWithRir = completedSets.filter(set => set.rir !== null)
+    const averageRir = setsWithRir.length > 0
+        ? setsWithRir.reduce((sum, set) => sum + set.rir!, 0) / setsWithRir.length
+        : null
+
+    return averageRir === null || averageRir <= 2
+}
+
+export function createTrainingWeekFromPrevious(exercise: Exercise): TrainingWeek {
+    const latestWeek = getLatestTrainingWeek(exercise)
+    const emptyWeek = createEmptyTrainingWeek(exercise)
+
+    return {
+        ...emptyWeek,
+        sets: latestWeek?.sets.map(set => ({
+            id: generateId(),
+            type: set.type,
+            weight: set.weight,
+            reps: null,
+            rir: null,
+        })) ?? [],
+    }
+}
+
 export function formatDate(iso: string): string {
     const date = new Date(iso)
     return date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })

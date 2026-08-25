@@ -1,4 +1,4 @@
-import { BarChart2, ChevronLeft, ChevronRight, Dumbbell, Info, Play, Trash2, TrendingUp, Zap } from 'lucide-react'
+import { BarChart2, ChevronLeft, ChevronRight, Dumbbell, Edit2, Info, Play, Trash2, TrendingUp, Zap } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Badge } from '../components/ui/Badge'
@@ -6,6 +6,7 @@ import { BottomSheet } from '../components/ui/BottomSheet'
 import { Button } from '../components/ui/Button'
 import { EmptyState } from '../components/ui/EmptyState'
 import { IconButton } from '../components/ui/IconButton'
+import { Input } from '../components/ui/Input'
 import { Modal } from '../components/ui/Modal'
 import { ThemeToggle } from '../components/ui/ThemeToggle'
 import { useWorkoutContext } from '../context/WorkoutContext'
@@ -17,11 +18,14 @@ import { normalizeString } from '../utils/stringUtils'
 export function ExercisePage() {
     const { dayId, exerciseId } = useParams<{ dayId: string; exerciseId: string }>()
     const navigate = useNavigate()
-    const { days, addWeekFromPrevious, applyWeightIncrement, deleteWeek } = useWorkoutContext()
+    const { days, addWeek, addWeekFromPrevious, applyWeightIncrement, deleteWeek, updateWeekLabel } = useWorkoutContext()
 
     // Estado para el modal de sugerencia de sobrecarga
     const [pendingWeek, setPendingWeek] = useState<TrainingWeek | null>(null)
     const [showTechnique, setShowTechnique] = useState(false)
+    const [deleteWeekId, setDeleteWeekId] = useState<string | null>(null)
+    const [renameWeek, setRenameWeek] = useState<TrainingWeek | null>(null)
+    const [weekLabel, setWeekLabel] = useState('')
 
     const day = days.find(d => d.id === dayId)
     const exercise = day?.exercises.find(e => e.id === exerciseId)
@@ -43,16 +47,12 @@ export function ExercisePage() {
         )
     // Semanas ordenadas: la más reciente (mayor weekNumber) primero
     const sortedWeeks = [...exercise.weeks].sort((a, b) => b.weekNumber - a.weekNumber)
-
     // Semana activa = la de mayor weekNumber (o null si no hay ninguna)
     const latestWeek = sortedWeeks[0] ?? null
-    // Mostrar CTA "Entrenar hoy" si no hay semanas O si la última ya tiene todas las series completadas
-    const showStartCTA = latestWeek === null || (
-        latestWeek.sets.length > 0 &&
+    const latestWeekIsComplete = latestWeek !== null && latestWeek.sets.length > 0 &&
         latestWeek.sets.every(s => s.weight !== null && s.reps !== null)
-    )
 
-    const handleAddWeek = () => {
+    const handleCopyWeek = () => {
         const { week, shouldSuggestIncrease } = addWeekFromPrevious(day.id, exercise.id)
 
         if (shouldSuggestIncrease) {
@@ -62,6 +62,11 @@ export function ExercisePage() {
             // Si no hay sugerencia, ir directo a la semana
             navigate(`/day/${day.id}/exercise/${exercise.id}/week/${week.id}`)
         }
+    }
+
+    const handleCreateEmptyWeek = () => {
+        const week = addWeek(day.id, exercise.id)
+        navigate(`/day/${day.id}/exercise/${exercise.id}/week/${week.id}`)
     }
 
     const handleApplyIncrement = (increment: number) => {
@@ -76,7 +81,18 @@ export function ExercisePage() {
 
     const handleDeleteWeek = (week: TrainingWeek, e: React.MouseEvent) => {
         e.stopPropagation()
-        deleteWeek(day.id, exercise.id, week.id)
+        setDeleteWeekId(week.id)
+    }
+
+    const handleConfirmDeleteWeek = () => {
+        if (deleteWeekId) deleteWeek(day.id, exercise.id, deleteWeekId)
+        setDeleteWeekId(null)
+    }
+
+    const handleRenameWeek = () => {
+        if (!renameWeek) return
+        updateWeekLabel(day.id, exercise.id, renameWeek.id, weekLabel.trim())
+        setRenameWeek(null)
     }
 
     // Semana anterior a la pendiente (para mostrar el peso de referencia en el modal)
@@ -120,15 +136,37 @@ export function ExercisePage() {
                     </button>
                 )}
 
-                {/* ── CTA: Entrenar hoy ────────────────────────────────── */}
-                {showStartCTA && (
+                {/* ── Acciones de creación de semana ───────────────────── */}
+                {latestWeek === null ? (
                     <button
-                        onClick={handleAddWeek}
+                        onClick={handleCreateEmptyWeek}
                         className="w-full flex items-center justify-center gap-2.5 bg-blue-600 hover:bg-blue-500 active:scale-[0.98] text-white font-semibold rounded-2xl py-4 text-sm transition-all"
                     >
                         <Play size={16} className="fill-white" />
-                        {latestWeek === null ? 'Empezar primera semana' : 'Empezar nueva semana'}
+                        Crear primera semana
                     </button>
+                ) : latestWeekIsComplete ? (
+                    <div className="grid grid-cols-2 gap-2">
+                        <button
+                            onClick={handleCopyWeek}
+                            className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 active:scale-[0.98] text-white font-semibold rounded-2xl py-4 text-sm transition-all"
+                        >
+                            <TrendingUp size={16} />
+                            Copiar anterior
+                        </button>
+                        <button
+                            onClick={handleCreateEmptyWeek}
+                            className="flex items-center justify-center gap-2 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-300 hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-400 active:scale-[0.98] font-semibold rounded-2xl py-4 text-sm transition-all"
+                        >
+                            <Dumbbell size={16} />
+                            Crear vacía
+                        </button>
+                    </div>
+                ) : null}
+                {latestWeek !== null && (
+                    <p className="text-xs text-center text-gray-500 dark:text-gray-600">
+                        Copiar conserva pesos y tipos de serie, pero deja reps y RIR vacíos.
+                    </p>
                 )}
 
                 {/* Gráfica de progresión */}
@@ -186,6 +224,11 @@ export function ExercisePage() {
                                 : 0
                             const isPR = progress.find(p => p.weekNumber === week.weekNumber)?.isPR
                             const isFullyDone = allSets.length > 0 && completed === allSets.length
+                            const status = allSets.length === 0
+                                ? { label: 'Vacía', variant: 'gray' as const }
+                                : isFullyDone
+                                    ? { label: 'Completada', variant: 'green' as const }
+                                    : { label: 'En curso', variant: 'blue' as const }
 
                             return (
                                 <button
@@ -208,6 +251,7 @@ export function ExercisePage() {
                                             {week.label ?? `Semana ${week.weekNumber}`}
                                         </p>
                                         <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                                            <Badge variant={status.variant}>{status.label}</Badge>
                                             {allSets.length === 0 ? (
                                                 <Badge variant="gray">Sin series</Badge>
                                             ) : (
@@ -238,25 +282,82 @@ export function ExercisePage() {
                                         >
                                             <Trash2 size={13} />
                                         </IconButton>
+                                        <IconButton
+                                            onClick={e => {
+                                                e.stopPropagation()
+                                                setRenameWeek(week)
+                                                setWeekLabel(week.label ?? '')
+                                            }}
+                                            variant="ghost"
+                                            size="sm"
+                                            title="Renombrar semana"
+                                        >
+                                            <Edit2 size={13} />
+                                        </IconButton>
                                         <ChevronRight size={16} className="text-gray-400" />
                                     </div>
                                 </button>
                             )
                         })}
 
-                        {/* Botón nueva semana — solo si el CTA azul de arriba no está visible */}
-                        {!showStartCTA && (
-                            <button
-                                onClick={handleAddWeek}
-                                className="w-full flex items-center justify-center gap-2 py-4 rounded-3xl border-2 border-dashed border-gray-300 dark:border-white/15 text-gray-500 dark:text-gray-600 hover:border-blue-500/60 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200 text-sm font-medium"
-                            >
-                                <TrendingUp size={18} />
-                                Nueva semana
-                            </button>
+                        {/* Si la última semana está incompleta, también se puede iniciar otra. */}
+                        {latestWeek !== null && !latestWeekIsComplete && latestWeek.sets.length > 0 && (
+                            <div className="grid grid-cols-2 gap-2">
+                                <button
+                                    onClick={handleCopyWeek}
+                                    className="flex items-center justify-center gap-2 py-4 rounded-3xl border-2 border-dashed border-gray-300 dark:border-white/15 text-gray-500 dark:text-gray-600 hover:border-blue-500/60 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200 text-sm font-medium"
+                                >
+                                    <TrendingUp size={17} />
+                                    Copiar anterior
+                                </button>
+                                <button
+                                    onClick={handleCreateEmptyWeek}
+                                    className="flex items-center justify-center gap-2 py-4 rounded-3xl border-2 border-dashed border-gray-300 dark:border-white/15 text-gray-500 dark:text-gray-600 hover:border-blue-500/60 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200 text-sm font-medium"
+                                >
+                                    <Dumbbell size={17} />
+                                    Crear vacía
+                                </button>
+                            </div>
                         )}
                     </div>
                 )}
             </div>
+
+            <Modal
+                open={deleteWeekId !== null}
+                onClose={() => setDeleteWeekId(null)}
+                title="¿Eliminar semana?"
+            >
+                <div className="space-y-4">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                        Se eliminarán todas las series registradas en esta semana. Esta acción no se puede deshacer.
+                    </p>
+                    <div className="flex gap-3">
+                        <Button variant="ghost" fullWidth onClick={() => setDeleteWeekId(null)}>Cancelar</Button>
+                        <Button variant="danger" fullWidth onClick={handleConfirmDeleteWeek}>Eliminar</Button>
+                    </div>
+                </div>
+            </Modal>
+
+            <Modal
+                open={renameWeek !== null}
+                onClose={() => setRenameWeek(null)}
+                title="Nombrar semana"
+            >
+                <div className="space-y-4">
+                    <Input
+                        label="Nombre opcional"
+                        placeholder={`Semana ${renameWeek?.weekNumber ?? ''}`}
+                        value={weekLabel}
+                        onChange={e => setWeekLabel(e.target.value)}
+                        onKeyDown={e => { if (e.key === 'Enter') handleRenameWeek() }}
+                        autoFocus
+                    />
+                    <Button fullWidth size="lg" onClick={handleRenameWeek}>
+                        Guardar nombre
+                    </Button>
+                </div>
+            </Modal>
 
             {/* Modal de sugerencia de sobrecarga progresiva */}
             <BottomSheet

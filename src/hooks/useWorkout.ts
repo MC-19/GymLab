@@ -1,6 +1,13 @@
 import { useCallback } from 'react'
 import type { Exercise, LoggedSet, TrainingWeek, WorkoutDay } from '../types'
-import { copyWorkoutDay, generateId } from '../utils/helpers'
+import {
+    copyWorkoutDay,
+    createEmptyTrainingWeek,
+    createTrainingWeekFromPrevious,
+    generateId,
+    getLatestTrainingWeek,
+    shouldSuggestWeightIncrease,
+} from '../utils/helpers'
 
 export function useWorkout(
     days: WorkoutDay[],
@@ -109,17 +116,14 @@ export function useWorkout(
     // ── Weeks ─────────────────────────────────────────────────────────────────
 
     const addWeek = useCallback((dayId: string, exerciseId: string) => {
-        const newWeekId = generateId()
         const exercise = days.find(day => day.id === dayId)?.exercises.find(ex => ex.id === exerciseId)
-        const nextNumber = exercise && exercise.weeks.length > 0
-            ? Math.max(...exercise.weeks.map(week => week.weekNumber)) + 1
-            : 1
+        if (!exercise) throw new Error('Exercise not found')
+        const newWeek = createEmptyTrainingWeek(exercise)
 
         updateExerciseInDay(dayId, exerciseId, ex => {
-            const newWeek: TrainingWeek = { id: newWeekId, weekNumber: nextNumber, sets: [] }
             return { ...ex, weeks: [...ex.weeks, newWeek] }
         })
-        return { id: newWeekId, weekNumber: nextNumber, sets: [] }
+        return newWeek
     }, [days, updateExerciseInDay])
 
     const deleteWeek = useCallback((dayId: string, exerciseId: string, weekId: string) => {
@@ -146,43 +150,20 @@ export function useWorkout(
      */
     const addWeekFromPrevious = useCallback(
         (dayId: string, exerciseId: string): { week: TrainingWeek; shouldSuggestIncrease: boolean } => {
-            let newWeek!: TrainingWeek
-            let shouldSuggestIncrease = false
+            const exercise = days.find(day => day.id === dayId)?.exercises.find(ex => ex.id === exerciseId)
+            if (!exercise) throw new Error('Exercise not found')
+
+            const previousWeek = getLatestTrainingWeek(exercise)
+            const newWeek = createTrainingWeekFromPrevious(exercise)
+            const shouldSuggestIncrease = shouldSuggestWeightIncrease(previousWeek)
 
             updateExerciseInDay(dayId, exerciseId, ex => {
-                // Semana más reciente (mayor weekNumber)
-                const lastWeek = ex.weeks.length > 0
-                    ? [...ex.weeks].sort((a, b) => b.weekNumber - a.weekNumber)[0]
-                    : null
-
-                const nextNumber = lastWeek ? lastWeek.weekNumber + 1 : 1
-
-                // Copiar sets con solo el peso de referencia — reps y RIR en blanco
-                const copiedSets: LoggedSet[] = lastWeek
-                    ? lastWeek.sets.map(s => ({ id: generateId(), weight: s.weight, reps: null, rir: null }))
-                    : []
-
-                // Sugerir subida si el promedio de RIR (sets con RIR rellenado) es ≤ 2
-                if (lastWeek) {
-                    const completedSets = lastWeek.sets.filter(s => s.weight !== null && s.reps !== null)
-                    const setsWithRir = completedSets.filter(s => s.rir !== null)
-                    const avgRir = setsWithRir.length > 0
-                        ? setsWithRir.reduce((sum, s) => sum + s.rir!, 0) / setsWithRir.length
-                        : null
-                    shouldSuggestIncrease =
-                        completedSets.length > 0 &&
-                        // Sin datos de RIR → sugerir por defecto
-                        // Con datos de RIR → sugerir solo si promedio ≤ 2
-                        (avgRir === null || avgRir <= 2)
-                }
-
-                newWeek = { id: generateId(), weekNumber: nextNumber, sets: copiedSets }
                 return { ...ex, weeks: [...ex.weeks, newWeek] }
             })
 
             return { week: newWeek, shouldSuggestIncrease }
         },
-        [updateExerciseInDay]
+        [days, updateExerciseInDay]
     )
 
     /**
