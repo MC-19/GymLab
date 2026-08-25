@@ -1,4 +1,4 @@
-import type { InputHTMLAttributes } from 'react'
+import { useId, type InputHTMLAttributes } from 'react'
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
     label?: string
@@ -6,14 +6,20 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 }
 
 export function Input({ label, error, className = '', ...props }: InputProps) {
+    const generatedId = useId()
+    const inputId = props.id ?? generatedId
+    const errorId = `${inputId}-error`
     return (
         <div className="flex flex-col gap-1">
             {label && (
-                <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                <label htmlFor={inputId} className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                     {label}
                 </label>
             )}
             <input
+                id={inputId}
+                aria-invalid={error ? true : undefined}
+                aria-describedby={error ? errorId : props['aria-describedby']}
                 className={[
                     'w-full bg-gray-100 dark:bg-white/8 rounded-2xl px-4 py-3',
                     'text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600',
@@ -26,7 +32,7 @@ export function Input({ label, error, className = '', ...props }: InputProps) {
                 ].join(' ')}
                 {...props}
             />
-            {error && <p className="text-xs text-red-500">{error}</p>}
+            {error && <p id={errorId} className="text-xs text-red-500">{error}</p>}
         </div>
     )
 }
@@ -43,13 +49,15 @@ interface NumberInputProps {
 }
 
 export function NumberInput({ label, value, onChange, min, max, step = 0.5, placeholder, unit }: NumberInputProps) {
+    const inputId = useId()
     return (
         <div className="flex flex-col gap-1 flex-1">
-            <label className="text-xs font-medium text-gray-500 dark:text-gray-400 text-center uppercase tracking-wide">
+            <label htmlFor={inputId} className="text-xs font-medium text-gray-500 dark:text-gray-400 text-center uppercase tracking-wide">
                 {label}
             </label>
             <div className="relative">
                 <input
+                    id={inputId}
                     type="number"
                     inputMode="decimal"
                     value={value ?? ''}

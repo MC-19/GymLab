@@ -20,7 +20,7 @@ const colors = {
 
 export function ToastContainer({ toasts, removeToast }: ToastContainerProps) {
     return (
-        <div className="fixed bottom-24 left-4 right-4 z-[100] flex flex-col gap-2 pointer-events-none">
+        <div aria-live="polite" aria-atomic="true" className="fixed bottom-24 left-4 right-4 z-[100] flex flex-col gap-2 pointer-events-none">
             {toasts.map(t => (
                 <div
                     key={t.id}
@@ -34,6 +34,7 @@ export function ToastContainer({ toasts, removeToast }: ToastContainerProps) {
                     <span className="text-sm font-medium text-white flex-1">{t.message}</span>
                     <button
                         onClick={() => removeToast(t.id)}
+                        aria-label="Cerrar notificación"
                         className="text-gray-500 hover:text-white transition-colors"
                     >
                         <X size={14} />

@@ -122,6 +122,7 @@ export function ProgramsPage() {
                         {!archived && (
                             <button
                                 onClick={() => setRenameTarget({ id: program.id, name: program.name })}
+                                aria-label={`Renombrar ${program.name}`}
                                 className="p-2 rounded-xl text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
                             >
                                 <Pencil size={14} />
@@ -150,6 +151,7 @@ export function ProgramsPage() {
                     {!archived && !isActive && (
                         <button
                             onClick={() => setArchiveTarget(program.id)}
+                            aria-label={`Archivar ${program.name}`}
                             className="p-2 rounded-xl text-gray-400 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10 transition-colors"
                             title="Archivar"
                         >
@@ -159,6 +161,7 @@ export function ProgramsPage() {
 
                     <button
                         onClick={() => setDeleteTarget(program.id)}
+                        aria-label={`Eliminar ${program.name}`}
                         className="p-2 rounded-xl text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
                         title="Eliminar"
                     >

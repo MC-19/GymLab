@@ -227,6 +227,7 @@ export function WeekPage() {
                                     {isDeleting ? (
                                         <button
                                             onClick={() => handleDeleteSet(set.id)}
+                                            aria-label={`Confirmar eliminación de la serie ${i + 1}`}
                                             className="w-10 h-10 rounded-2xl bg-red-500 flex items-center justify-center text-white animate-bounce-in shrink-0"
                                         >
                                             <Trash2 size={14} />
@@ -234,6 +235,7 @@ export function WeekPage() {
                                     ) : (
                                         <IconButton
                                             onClick={() => setDeletingSetId(set.id)}
+                                            aria-label={`Eliminar serie ${i + 1}`}
                                             variant="danger"
                                             size="md"
                                         >

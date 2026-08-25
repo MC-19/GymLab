@@ -1,31 +1,48 @@
 import { useCallback } from 'react'
 import { useLocalStorage } from './useLocalStorage'
-import type { WorkoutDay, WorkoutState, CompletedSession } from '../types'
+import type { TrainingProgram, WorkoutDay, WorkoutState, CompletedSession } from '../types'
 import { generateId } from '../utils/helpers'
 
 const STATE_KEY = 'gymlab_state'
 
 const DEFAULT_STATE: WorkoutState = {
-    currentDayIndex: 0,
+    version: 2,
+    currentDayIndexByProgram: {},
     sessions: [],
 }
 
-function loadState(): WorkoutState {
+export function parseWorkoutState(raw: string | null, activeProgramId = ''): WorkoutState {
     try {
-        const raw = localStorage.getItem(STATE_KEY)
         if (!raw) return DEFAULT_STATE
-        const parsed = JSON.parse(raw) as Partial<WorkoutState>
+        const parsed = JSON.parse(raw) as Partial<WorkoutState> & { currentDayIndex?: number }
+        const legacyIndex = Number.isInteger(parsed.currentDayIndex) ? parsed.currentDayIndex! : 0
         return {
-            currentDayIndex: parsed.currentDayIndex ?? 0,
-            sessions: parsed.sessions ?? [],
+            version: 2,
+            currentDayIndexByProgram: parsed.currentDayIndexByProgram
+                ?? (activeProgramId ? { [activeProgramId]: legacyIndex } : {}),
+            sessions: Array.isArray(parsed.sessions)
+                ? parsed.sessions.map(session =>
+                    activeProgramId && !session.programId
+                        ? { ...session, programId: activeProgramId }
+                        : session
+                )
+                : [],
         }
     } catch {
         return DEFAULT_STATE
     }
 }
 
-export function useRotation() {
-    const [state, setState] = useLocalStorage<WorkoutState>(STATE_KEY, DEFAULT_STATE, loadState)
+export function useRotation(activeProgram: TrainingProgram | null) {
+    const activeProgramId = activeProgram?.id ?? ''
+    const [state, setState] = useLocalStorage<WorkoutState>(
+        STATE_KEY,
+        DEFAULT_STATE,
+        () => parseWorkoutState(localStorage.getItem(STATE_KEY), activeProgramId)
+    )
+    const currentDayIndex = activeProgramId
+        ? state.currentDayIndexByProgram[activeProgramId] ?? 0
+        : 0
 
     /**
      * Devuelve el día que toca ahora dado el array de días.
@@ -34,10 +51,10 @@ export function useRotation() {
     const getCurrentDay = useCallback(
         (days: WorkoutDay[]): WorkoutDay | null => {
             if (days.length === 0) return null
-            const idx = state.currentDayIndex % days.length
+            const idx = currentDayIndex % days.length
             return days[idx] ?? null
         },
-        [state.currentDayIndex]
+        [currentDayIndex]
     )
 
     /**
@@ -49,17 +66,24 @@ export function useRotation() {
         (dayId: string, totalDays: number) => {
             const session: CompletedSession = {
                 id: generateId(),
+                programId: activeProgramId || undefined,
+                programName: activeProgram?.name,
                 dayId,
+                dayName: activeProgram?.days.find(day => day.id === dayId)?.name,
                 completedAt: new Date().toISOString(),
             }
             setState(prev => ({
-                currentDayIndex: totalDays > 0
-                    ? (prev.currentDayIndex + 1) % totalDays
-                    : 0,
+                ...prev,
+                currentDayIndexByProgram: activeProgramId ? {
+                    ...prev.currentDayIndexByProgram,
+                    [activeProgramId]: totalDays > 0
+                        ? ((prev.currentDayIndexByProgram[activeProgramId] ?? 0) + 1) % totalDays
+                        : 0,
+                } : prev.currentDayIndexByProgram,
                 sessions: [...prev.sessions, session],
             }))
         },
-        [setState]
+        [activeProgram, activeProgramId, setState]
     )
 
     /**
@@ -70,27 +94,40 @@ export function useRotation() {
         (days = 7): CompletedSession[] => {
             const cutoff = new Date()
             cutoff.setDate(cutoff.getDate() - days)
-            return state.sessions.filter(s => new Date(s.completedAt) >= cutoff)
+            return state.sessions.filter(s =>
+                (!s.programId || s.programId === activeProgramId)
+                && new Date(s.completedAt) >= cutoff
+            )
         },
-        [state.sessions]
+        [activeProgramId, state.sessions]
     )
+
+    const sessions = state.sessions.filter(s => !s.programId || s.programId === activeProgramId)
 
     /** Reinicia la rotación al Día 0 (no borra el historial) */
     const resetRotation = useCallback(() => {
-        setState(prev => ({ ...prev, currentDayIndex: 0 }))
-    }, [setState])
+        if (!activeProgramId) return
+        setState(prev => ({
+            ...prev,
+            currentDayIndexByProgram: { ...prev.currentDayIndexByProgram, [activeProgramId]: 0 },
+        }))
+    }, [activeProgramId, setState])
 
     /** Establece manualmente el índice de la rotación */
     const setCurrentDayIndex = useCallback(
         (index: number) => {
-            setState(prev => ({ ...prev, currentDayIndex: index }))
+            if (!activeProgramId) return
+            setState(prev => ({
+                ...prev,
+                currentDayIndexByProgram: { ...prev.currentDayIndexByProgram, [activeProgramId]: index },
+            }))
         },
-        [setState]
+        [activeProgramId, setState]
     )
 
     return {
-        currentDayIndex: state.currentDayIndex,
-        sessions: state.sessions,
+        currentDayIndex,
+        sessions,
         getCurrentDay,
         completeSession,
         getRecentSessions,

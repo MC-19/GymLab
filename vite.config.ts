@@ -52,6 +52,15 @@ export default defineConfig({
             },
           },
           {
+            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'google-font-files-cache',
+              expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
             urlPattern: /^https:\/\/fitnessprogramer\.com\/.*\.(?:gif|png|jpe?g|webp)$/i,
             handler: 'CacheFirst',
             options: {

@@ -105,11 +105,12 @@ export function Dashboard() {
                     <div className="flex items-center gap-2">
                         <button 
                             onClick={handleOpenChangelog}
+                            aria-label={hasUnseenUpdates ? 'Ver novedades sin leer' : 'Ver novedades'}
                             className="relative w-10 h-10 rounded-full bg-gray-100 dark:bg-white/10 flex items-center justify-center text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/20 transition-colors"
                         >
                             <Bell size={18} />
                             {hasUnseenUpdates && (
-                                <span className="absolute top-2.5 right-2 right-2.5 w-2.5 h-2.5 rounded-full bg-red-500 border-2 border-gray-100 dark:border-black" />
+                                <span className="absolute top-2.5 right-2.5 w-2.5 h-2.5 rounded-full bg-red-500 border-2 border-gray-100 dark:border-black" />
                             )}
                         </button>
                         <ThemeToggle />

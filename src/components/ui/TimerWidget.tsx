@@ -42,6 +42,7 @@ export function TimerWidget() {
         return (
             <button
                 onClick={() => setIsMinimized(false)}
+                aria-label={`Abrir temporizador, quedan ${formatTime(timeRemaining)}`}
                 className="fixed bottom-24 -right-1 z-50 flex items-center gap-2 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border border-gray-200/80 dark:border-white/10 shadow-xl pl-3 pr-4 py-2.5 rounded-l-2xl animate-fade-in hover:-translate-x-1 transition-transform active:scale-95"
             >
                 <ChevronRight size={14} className="text-gray-400 rotate-180" />
@@ -85,12 +86,14 @@ export function TimerWidget() {
                 <div className="flex items-center gap-2">
                     <button
                         onClick={() => addTime(-30)}
+                        aria-label="Restar 30 segundos"
                         className="w-10 h-10 rounded-full bg-gray-100 dark:bg-white/5 flex items-center justify-center text-gray-600 dark:text-gray-300 active:scale-95 transition-transform shrink-0"
                     >
                         <Minus size={18} />
                     </button>
                     <button
                         onClick={() => addTime(30)}
+                        aria-label="Añadir 30 segundos"
                         className="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center active:scale-95 transition-transform shrink-0"
                     >
                         <Plus size={18} />
@@ -98,6 +101,7 @@ export function TimerWidget() {
                     <div className="w-px h-8 bg-gray-200 dark:bg-white/10 mx-1" />
                     <button
                         onClick={stopTimer}
+                        aria-label="Detener temporizador"
                         className="w-10 h-10 rounded-full bg-gray-100 dark:bg-white/5 flex items-center justify-center text-gray-500 dark:text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 active:scale-95 transition-all shrink-0"
                     >
                         <X size={18} />

@@ -16,7 +16,7 @@ export function ThemeToggle() {
                 'Modo sistema'
 
     return (
-        <IconButton onClick={toggleTheme} title={label} variant="ghost">
+        <IconButton onClick={toggleTheme} title={label} aria-label={`${label}. Cambiar tema`} variant="ghost">
             {icon}
         </IconButton>
     )

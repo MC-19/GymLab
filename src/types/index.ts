@@ -77,12 +77,16 @@ export interface AppSettings {
 /** Registro de una sesión de entrenamiento completada */
 export interface CompletedSession {
     id: string
+    programId?: string      // opcional para sesiones creadas antes de la migración v2
+    programName?: string    // instantánea para conservar el historial si se renombra/elimina
     dayId: string          // qué día de la rotación se entrenó
+    dayName?: string        // instantánea para conservar el historial si se renombra/elimina
     completedAt: string    // ISO timestamp
 }
 
-/** Estado global de la rotación (separado de las plantillas de días) */
+/** Estado persistido de la rotación, independiente para cada programa. */
 export interface WorkoutState {
-    currentDayIndex: number        // índice en days[] que toca ahora
+    version: 2
+    currentDayIndexByProgram: Record<string, number>
     sessions: CompletedSession[]   // historial completo de sesiones
 }

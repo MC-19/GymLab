@@ -6,6 +6,7 @@ import { useTimer } from '../context/TimerContext'
 import { Button } from '../components/ui/Button'
 import { Modal } from '../components/ui/Modal'
 import type { ThemeMode } from '../types'
+import { getGymLabStorageKeys, parseBackup } from '../utils/backup'
 
 const themeOptions: { value: ThemeMode; label: string; icon: React.ReactNode }[] = [
     { value: 'system', label: 'Sistema', icon: <Monitor size={18} /> },
@@ -30,11 +31,8 @@ export function SettingsPage() {
     // ── Exportar ──────────────────────────────────────────────────────────────
     const handleExport = () => {
         const exportedData: Record<string, string> = {}
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i)
-            if (key && key.startsWith('gymlab_')) {
-                exportedData[key] = localStorage.getItem(key) || ''
-            }
+        for (const key of getGymLabStorageKeys(localStorage)) {
+            exportedData[key] = localStorage.getItem(key) || ''
         }
 
         const backup = {
@@ -66,21 +64,21 @@ export function SettingsPage() {
             showToast('El archivo debe ser un .json de GymLab', 'error')
             return
         }
+        if (file.size > 5 * 1024 * 1024) {
+            showToast('El backup supera el límite de 5 MB', 'error')
+            return
+        }
         setImportFileName(file.name)
         const reader = new FileReader()
         reader.onload = ev => {
             try {
                 const raw = ev.target?.result as string
                 // Validación básica: debe tener version y days
-                const parsed = JSON.parse(raw)
-                if (!parsed.days || !Array.isArray(parsed.days)) {
-                    showToast('Archivo no válido: no contiene datos de GymLab', 'error')
-                    return
-                }
+                parseBackup(raw)
                 setImportedData(raw)
                 setShowImportModal(true)
-            } catch {
-                showToast('Error al leer el archivo', 'error')
+            } catch (error) {
+                showToast(error instanceof Error ? error.message : 'Error al leer el archivo', 'error')
             }
         }
         reader.readAsText(file)
@@ -91,26 +89,12 @@ export function SettingsPage() {
     const handleConfirmImport = () => {
         if (!importedData) return
         try {
-            const parsed = JSON.parse(importedData)
+            const parsed = parseBackup(importedData)
+            let restoredData: Record<string, string>
 
-            if (parsed.version === 2 && parsed.localStorage) {
-                // Remove existing gymlab_ keys to clean up before importing
-                const keysToRemove = []
-                for (let i = 0; i < localStorage.length; i++) {
-                    const key = localStorage.key(i)
-                    if (key && key.startsWith('gymlab_')) {
-                        keysToRemove.push(key)
-                    }
-                }
-                keysToRemove.forEach(k => localStorage.removeItem(k))
-
-                // Restore new keys from backup
-                for (const [key, value] of Object.entries(parsed.localStorage)) {
-                    if (typeof value === 'string') {
-                        localStorage.setItem(key, value)
-                    }
-                }
-            } else if (parsed.days) {
+            if (parsed.version === 2) {
+                restoredData = parsed.localStorage ?? {}
+            } else {
                 // V1 migration handling
                 const defaultProgram = {
                     id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
@@ -119,9 +103,23 @@ export function SettingsPage() {
                     isArchived: false,
                     days: parsed.days,
                 }
-                localStorage.setItem('gymlab_programs', JSON.stringify([defaultProgram]))
-                localStorage.setItem('gymlab_active_program_id', defaultProgram.id)
-                localStorage.removeItem('gymlab_days')
+                restoredData = {
+                    gymlab_programs: JSON.stringify([defaultProgram]),
+                    gymlab_active_program_id: JSON.stringify(defaultProgram.id),
+                }
+            }
+
+            const existingData = Object.fromEntries(
+                getGymLabStorageKeys(localStorage).map(key => [key, localStorage.getItem(key) ?? ''])
+            )
+
+            try {
+                getGymLabStorageKeys(localStorage).forEach(key => localStorage.removeItem(key))
+                Object.entries(restoredData).forEach(([key, value]) => localStorage.setItem(key, value))
+            } catch (error) {
+                getGymLabStorageKeys(localStorage).forEach(key => localStorage.removeItem(key))
+                Object.entries(existingData).forEach(([key, value]) => localStorage.setItem(key, value))
+                throw error
             }
 
             showToast('Datos restaurados. Recargando…', 'success')
@@ -133,7 +131,7 @@ export function SettingsPage() {
     }
 
     const handleClearData = () => {
-        localStorage.clear()
+        getGymLabStorageKeys(localStorage).forEach(key => localStorage.removeItem(key))
         window.location.reload()
     }
 
@@ -210,7 +208,7 @@ export function SettingsPage() {
                             <Info size={14} className="text-blue-500 mt-0.5 shrink-0" />
                             <p className="text-xs text-blue-800 dark:text-blue-300 leading-relaxed">
                                 Todos tus datos se guardan <strong>solo en este dispositivo y navegador</strong>.
-                                Si desinstelas la app de la pantalla de inicio o cambias de navegador, los datos
+                                Si desinstalas la app de la pantalla de inicio o cambias de navegador, los datos
                                 se pierden. Exporta una copia antes de hacerlo.
                             </p>
                         </div>
@@ -234,7 +232,6 @@ export function SettingsPage() {
                                 size="sm"
                                 icon={<Download size={14} />}
                                 onClick={handleExport}
-                                disabled={days.length === 0}
                             >
                                 Exportar backup
                             </Button>

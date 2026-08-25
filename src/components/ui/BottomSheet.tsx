@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react'
+import { useEffect, useId, useRef, type ReactNode } from 'react'
 import { X } from 'lucide-react'
 import { IconButton } from './IconButton'
 import { useKeyboardHeight } from '../../hooks/useKeyboardHeight'
@@ -14,16 +14,21 @@ interface BottomSheetProps {
 
 export function BottomSheet({ open, onClose, title, className = '', noPadding, children }: BottomSheetProps) {
     const keyboardHeight = useKeyboardHeight()
+    const panelRef = useRef<HTMLDivElement>(null)
+    const titleId = useId()
 
     useEffect(() => {
         if (!open) return
+        const previouslyFocused = document.activeElement as HTMLElement | null
         const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
         document.addEventListener('keydown', onKey)
         // Prevent background scroll
         document.body.style.overflow = 'hidden'
+        panelRef.current?.focus()
         return () => {
             document.removeEventListener('keydown', onKey)
             document.body.style.overflow = ''
+            previouslyFocused?.focus()
         }
     }, [open, onClose])
 
@@ -41,7 +46,13 @@ export function BottomSheet({ open, onClose, title, className = '', noPadding, c
             />
             {/* Sheet — use paddingBottom instead of marginBottom so max-h maintains its position */}
             <div
-                className={`relative w-full bg-white dark:bg-gray-900 rounded-t-3xl shadow-2xl animate-slide-up max-h-[92dvh] flex flex-col transition-[padding] duration-100 ${className}`}
+                ref={panelRef}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby={title ? titleId : undefined}
+                aria-label={title ? undefined : 'Panel'}
+                tabIndex={-1}
+                className={`relative w-full bg-white dark:bg-gray-900 rounded-t-3xl shadow-2xl animate-slide-up max-h-[92dvh] flex flex-col transition-[padding] duration-100 outline-none ${className}`}
                 style={{ paddingBottom: keyboardHeight }}
             >
                 {/* Handle */}
@@ -50,8 +61,8 @@ export function BottomSheet({ open, onClose, title, className = '', noPadding, c
                 </div>
                 {title && (
                     <div className="flex items-center justify-between px-6 py-3 border-b border-gray-100 dark:border-white/10 shrink-0">
-                        <h2 className="text-base font-semibold text-gray-900 dark:text-white">{title}</h2>
-                        <IconButton onClick={onClose} variant="ghost" size="sm">
+                        <h2 id={titleId} className="text-base font-semibold text-gray-900 dark:text-white">{title}</h2>
+                        <IconButton onClick={onClose} variant="ghost" size="sm" aria-label="Cerrar panel">
                             <X size={16} />
                         </IconButton>
                     </div>

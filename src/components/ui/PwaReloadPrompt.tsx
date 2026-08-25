@@ -43,6 +43,7 @@ export function PwaReloadPrompt() {
                 </button>
                 <button
                     onClick={close}
+                    aria-label="Cerrar aviso de actualización"
                     className="shrink-0 w-8 h-8 flex items-center justify-center rounded-xl bg-transparent active:bg-white/10"
                 >
                     <X size={16} />

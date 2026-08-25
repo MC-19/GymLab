@@ -58,7 +58,7 @@ const WorkoutContext = createContext<WorkoutContextType | null>(null)
 export function WorkoutProvider({ children }: { children: ReactNode }) {
     const programsApi = usePrograms()
     const workout = useWorkout(programsApi.days, programsApi.setDays)
-    const rotation = useRotation()
+    const rotation = useRotation(programsApi.activeProgram)
     const { toasts, showToast, removeToast } = useToast()
 
     return (
