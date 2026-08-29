@@ -12,6 +12,7 @@ import { BodyWeightPage } from './features/bodyweight/components/BodyWeightPage'
 import { TimerWidget } from './components/ui/TimerWidget'
 import { PwaReloadPrompt } from './components/ui/PwaReloadPrompt'
 import { AnalyticsConsentBanner } from './components/ui/AnalyticsConsentBanner'
+import { PrivacyPage } from './pages/PrivacyPage'
 
 export default function App() {
   return (
@@ -29,6 +30,7 @@ export default function App() {
         <Route path="/history" element={<HistoryPage />} />
         <Route path="/weight" element={<BodyWeightPage />} />
         <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/privacy" element={<PrivacyPage />} />
       </Routes>
     </AppShell>
   )

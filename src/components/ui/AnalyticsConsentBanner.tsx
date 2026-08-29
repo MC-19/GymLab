@@ -1,5 +1,6 @@
 import { ShieldCheck } from 'lucide-react'
 import { useAnalyticsConsent } from '../../hooks/useAnalyticsConsent'
+import { Link } from 'react-router-dom'
 
 export function AnalyticsConsentBanner() {
     const { consent, acceptAnalytics, rejectAnalytics } = useAnalyticsConsent()
@@ -20,6 +21,9 @@ export function AnalyticsConsentBanner() {
                     <p className="mt-1 text-xs leading-relaxed text-gray-600 dark:text-gray-400">
                         Nos gustaría medir visitas para mejorar GymLab. Tus rutinas, pesos, notas y series no se envían a Google Analytics.
                     </p>
+                    <Link to="/privacy" className="mt-1.5 inline-block text-xs font-medium text-blue-600 underline underline-offset-2 dark:text-blue-400">
+                        Más información
+                    </Link>
                 </div>
             </div>
             <div className="mt-4 grid grid-cols-2 gap-2">

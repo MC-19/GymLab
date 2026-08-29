@@ -8,6 +8,7 @@ import { Modal } from '../components/ui/Modal'
 import type { ThemeMode } from '../types'
 import { getGymLabStorageKeys, parseBackup } from '../utils/backup'
 import { useAnalyticsConsent } from '../hooks/useAnalyticsConsent'
+import { Link } from 'react-router-dom'
 
 const themeOptions: { value: ThemeMode; label: string; icon: React.ReactNode }[] = [
     { value: 'system', label: 'Sistema', icon: <Monitor size={18} /> },
@@ -233,6 +234,9 @@ export function SettingsPage() {
                                 Activada
                             </button>
                         </div>
+                        <Link to="/privacy" className="mt-3 inline-block text-xs font-medium text-blue-600 underline underline-offset-2 dark:text-blue-400">
+                            Consultar privacidad y cookies
+                        </Link>
                     </div>
                 </Section>
 
