@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { reportStorageError } from '../services/storageErrors'
 
 /**
  * Hook de almacenamiento local con soporte para función inicializadora externa.
@@ -20,18 +21,11 @@ export function useLocalStorage<T>(
     })
 
     useEffect(() => {
-        const timer = setTimeout(() => {
-            try {
-                localStorage.setItem(key, JSON.stringify(value))
-            } catch (e) {
-                if (e instanceof DOMException && e.name === 'QuotaExceededError') {
-                    console.error('[GymLab] localStorage lleno. Considera limpiar el historial.')
-                } else {
-                    console.error('[GymLab] Error guardando en localStorage:', e)
-                }
-            }
-        }, 300)
-        return () => clearTimeout(timer)
+        try {
+            localStorage.setItem(key, JSON.stringify(value))
+        } catch (error) {
+            reportStorageError(error)
+        }
     }, [key, value])
 
     return [value, setValue] as const

@@ -1,5 +1,20 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
+
+@font-face {
+  font-family: 'Inter Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url('@fontsource-variable/inter/files/inter-latin-wght-normal.woff2') format('woff2-variations');
+}
+
+@font-face {
+  font-family: 'Outfit Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url('@fontsource-variable/outfit/files/outfit-latin-wght-normal.woff2') format('woff2-variations');
+}
 
 /* ====================================================
    CRITICAL: TailwindCSS v4 class-based dark mode
@@ -9,8 +24,8 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-  --font-sans: 'Inter', system-ui, sans-serif;
-  --font-display: 'Outfit', system-ui, sans-serif;
+  --font-sans: 'Inter Variable', system-ui, sans-serif;
+  --font-display: 'Outfit Variable', system-ui, sans-serif;
 
   /* Brand colors */
   --color-brand: #2563eb;
@@ -23,7 +38,7 @@
 }
 
 html {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Inter Variable', system-ui, sans-serif;
   -webkit-tap-highlight-color: transparent;
   -webkit-text-size-adjust: 100%;
   /* Prevent white flash on overscroll in light mode */

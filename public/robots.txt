@@ -5,6 +5,7 @@ Allow: /
 # There is no indexable public content on these paths.
 Disallow: /day/
 Disallow: /settings
+Disallow: /privacy
 Disallow: /weight
 Disallow: /history
 Disallow: /routines

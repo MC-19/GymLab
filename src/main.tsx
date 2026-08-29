@@ -5,6 +5,7 @@ import { WorkoutProvider } from './context/WorkoutContext'
 import { TimerProvider } from './context/TimerContext'
 import App from './App'
 import './index.css'
+import { AppErrorBoundary } from './components/errors/AppErrorBoundary'
 
   // Apply theme before paint (avoid flash)
   ; (function () {
@@ -17,12 +18,14 @@ import './index.css'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <BrowserRouter>
-      <WorkoutProvider>
-        <TimerProvider>
-          <App />
-        </TimerProvider>
-      </WorkoutProvider>
-    </BrowserRouter>
+    <AppErrorBoundary>
+      <BrowserRouter>
+        <WorkoutProvider>
+          <TimerProvider>
+            <App />
+          </TimerProvider>
+        </WorkoutProvider>
+      </BrowserRouter>
+    </AppErrorBoundary>
   </StrictMode>
 )

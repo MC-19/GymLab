@@ -9,8 +9,9 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'prompt',
-      includeAssets: ['favicon.ico', 'icons/*.png'],
+      includeAssets: ['icons/icon-192.png', 'icons/icon-512-square.png', 'icons/icon-maskable-square.png'],
       manifest: {
+        id: '/',
         name: 'GymLab',
         short_name: 'GymLab',
         description: 'Tu tracker de entrenamiento personal',
@@ -20,6 +21,8 @@ export default defineConfig({
         orientation: 'portrait',
         scope: '/',
         start_url: '/',
+        lang: 'es',
+        categories: ['health', 'fitness', 'lifestyle'],
         icons: [
           {
             src: 'icons/icon-192.png',
@@ -27,12 +30,12 @@ export default defineConfig({
             type: 'image/png',
           },
           {
-            src: 'icons/icon-512.png',
+            src: 'icons/icon-512-square.png',
             sizes: '512x512',
             type: 'image/png',
           },
           {
-            src: 'icons/icon-maskable.png',
+            src: 'icons/icon-maskable-square.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'maskable',
@@ -41,25 +44,8 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        globIgnores: ['icons/image_copy.png'],
         runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'google-fonts-cache',
-              expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
-              cacheableResponse: { statuses: [0, 200] },
-            },
-          },
-          {
-            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'google-font-files-cache',
-              expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
-              cacheableResponse: { statuses: [0, 200] },
-            },
-          },
           {
             urlPattern: /^https:\/\/fitnessprogramer\.com\/.*\.(?:gif|png|jpe?g|webp)$/i,
             handler: 'CacheFirst',

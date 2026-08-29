@@ -13,12 +13,14 @@ import { TimerWidget } from './components/ui/TimerWidget'
 import { PwaReloadPrompt } from './components/ui/PwaReloadPrompt'
 import { AnalyticsConsentBanner } from './components/ui/AnalyticsConsentBanner'
 import { PrivacyPage } from './pages/PrivacyPage'
+import { StorageErrorNotifier } from './components/ui/StorageErrorNotifier'
 
 export default function App() {
   return (
     <AppShell>
       <PwaReloadPrompt />
       <AnalyticsConsentBanner />
+      <StorageErrorNotifier />
       <TimerWidget />
       <Routes>
         <Route path="/" element={<Dashboard />} />

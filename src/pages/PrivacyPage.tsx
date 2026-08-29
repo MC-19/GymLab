@@ -79,7 +79,10 @@ export function PrivacyPage() {
 
                 <PolicySection title="4. Proveedores externos">
                     <p>
-                        Google presta el servicio de Analytics y puede tratar información técnica conforme a sus propias condiciones. GymLab también solicita a Google Fonts los archivos tipográficos utilizados por la interfaz.
+                        Google presta el servicio de Analytics y puede tratar información técnica conforme a sus propias condiciones. Las fuentes de la interfaz están incluidas en GymLab y no requieren conectarse con Google Fonts.
+                    </p>
+                    <p>
+                        Algunas demostraciones visuales de ejercicios proceden de FitnessProgramer y solo se solicitan cuando consultas contenido que las utiliza. Ese proveedor puede recibir información técnica básica de la conexión, como la dirección IP.
                     </p>
                     <a
                         href="https://policies.google.com/privacy"
@@ -98,10 +101,33 @@ export function PrivacyPage() {
                     </p>
                 </PolicySection>
 
-                <div className="flex items-start gap-3 rounded-3xl border border-amber-200/70 bg-amber-50 p-4 text-xs text-amber-900 dark:border-amber-500/20 dark:bg-amber-500/8 dark:text-amber-300">
+                <PolicySection title="6. Responsable y contacto">
+                    <div className="rounded-2xl border border-gray-200/70 bg-gray-50 p-4 text-xs dark:border-white/10 dark:bg-white/5">
+                        <dl className="space-y-2">
+                            <div>
+                                <dt className="font-semibold text-gray-900 dark:text-white">Responsable</dt>
+                                <dd>Mario Cristian Dascalu Marisca</dd>
+                            </div>
+                            <div>
+                                <dt className="font-semibold text-gray-900 dark:text-white">País</dt>
+                                <dd>España</dd>
+                            </div>
+                            <div>
+                                <dt className="font-semibold text-gray-900 dark:text-white">Contacto de privacidad</dt>
+                                <dd>
+                                    <a className="text-blue-600 underline underline-offset-2 dark:text-blue-400" href="mailto:mc.software.dev09@gmail.com">
+                                        mc.software.dev09@gmail.com
+                                    </a>
+                                </dd>
+                            </div>
+                        </dl>
+                    </div>
+                </PolicySection>
+
+                <div className="flex items-start gap-3 rounded-3xl border border-blue-200/70 bg-blue-50 p-4 text-xs text-blue-900 dark:border-blue-500/20 dark:bg-blue-500/8 dark:text-blue-300">
                     <Database size={16} className="mt-0.5 shrink-0" />
                     <p>
-                        Esta información deberá completarse con la identidad y el contacto del responsable antes de publicar GymLab como producto comercial.
+                        Para ejercer derechos relacionados con la información gestionada por GymLab o realizar una consulta de privacidad, utiliza el correo indicado arriba.
                     </p>
                 </div>
 
