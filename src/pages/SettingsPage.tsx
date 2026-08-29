@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { Sun, Moon, Monitor, Trash2, Info, Download, Upload, FileJson, AlertTriangle } from 'lucide-react'
+import { Sun, Moon, Monitor, Trash2, Info, Download, Upload, FileJson, AlertTriangle, ShieldCheck } from 'lucide-react'
 import { useTheme } from '../hooks/useTheme'
 import { useWorkoutContext } from '../context/WorkoutContext'
 import { useTimer } from '../context/TimerContext'
@@ -7,6 +7,7 @@ import { Button } from '../components/ui/Button'
 import { Modal } from '../components/ui/Modal'
 import type { ThemeMode } from '../types'
 import { getGymLabStorageKeys, parseBackup } from '../utils/backup'
+import { useAnalyticsConsent } from '../hooks/useAnalyticsConsent'
 
 const themeOptions: { value: ThemeMode; label: string; icon: React.ReactNode }[] = [
     { value: 'system', label: 'Sistema', icon: <Monitor size={18} /> },
@@ -18,6 +19,7 @@ export function SettingsPage() {
     const { theme, setTheme } = useTheme()
     const { days, showToast } = useWorkoutContext()
     const { defaultRestTime, setDefaultRestTime } = useTimer()
+    const { consent, acceptAnalytics, rejectAnalytics } = useAnalyticsConsent()
     const [showClearModal, setShowClearModal] = useState(false)
     const [showImportModal, setShowImportModal] = useState(false)
     const [importedData, setImportedData] = useState<string | null>(null)
@@ -187,6 +189,51 @@ export function SettingsPage() {
                         </select>
                     </div>
 
+                </Section>
+
+                {/* Privacy */}
+                <Section title="Privacidad">
+                    <div className="rounded-3xl border border-gray-200/60 bg-gray-50 p-4 dark:border-white/8 dark:bg-white/5">
+                        <div className="flex items-start gap-3">
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-600 dark:bg-blue-500/15 dark:text-blue-400">
+                                <ShieldCheck size={17} />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                                <p className="text-sm font-semibold text-gray-900 dark:text-white">Analítica de uso</p>
+                                <p className="mt-0.5 text-xs leading-relaxed text-gray-500">
+                                    Ayuda a medir visitas y mejorar la aplicación. Nunca incluye rutinas, pesos, notas ni series.
+                                </p>
+                            </div>
+                        </div>
+                        <div className="mt-4 grid grid-cols-2 gap-2" role="group" aria-label="Consentimiento de analítica">
+                            <button
+                                type="button"
+                                onClick={rejectAnalytics}
+                                aria-pressed={consent === 'rejected'}
+                                className={[
+                                    'rounded-2xl border px-3 py-2.5 text-xs font-semibold transition-colors',
+                                    consent === 'rejected'
+                                        ? 'border-gray-900 bg-gray-900 text-white dark:border-white dark:bg-white dark:text-black'
+                                        : 'border-gray-200 bg-white text-gray-600 dark:border-white/10 dark:bg-white/5 dark:text-gray-300',
+                                ].join(' ')}
+                            >
+                                Desactivada
+                            </button>
+                            <button
+                                type="button"
+                                onClick={acceptAnalytics}
+                                aria-pressed={consent === 'accepted'}
+                                className={[
+                                    'rounded-2xl border px-3 py-2.5 text-xs font-semibold transition-colors',
+                                    consent === 'accepted'
+                                        ? 'border-blue-600 bg-blue-600 text-white dark:border-blue-500 dark:bg-blue-500'
+                                        : 'border-gray-200 bg-white text-gray-600 dark:border-white/10 dark:bg-white/5 dark:text-gray-300',
+                                ].join(' ')}
+                            >
+                                Activada
+                            </button>
+                        </div>
+                    </div>
                 </Section>
 
                 {/* Data stats */}

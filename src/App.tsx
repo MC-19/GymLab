@@ -11,11 +11,13 @@ import { ProgramsPage } from './pages/ProgramsPage'
 import { BodyWeightPage } from './features/bodyweight/components/BodyWeightPage'
 import { TimerWidget } from './components/ui/TimerWidget'
 import { PwaReloadPrompt } from './components/ui/PwaReloadPrompt'
+import { AnalyticsConsentBanner } from './components/ui/AnalyticsConsentBanner'
 
 export default function App() {
   return (
     <AppShell>
       <PwaReloadPrompt />
+      <AnalyticsConsentBanner />
       <TimerWidget />
       <Routes>
         <Route path="/" element={<Dashboard />} />
