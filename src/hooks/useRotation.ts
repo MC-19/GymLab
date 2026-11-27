@@ -57,6 +57,14 @@ export function removeDayFromRotation(state: WorkoutState, programId: string, da
     return pointRotationAt(state, programId, remaining, remaining.findIndex(day => day.id === currentId))
 }
 
+export function replaceRotationDay(
+    state: WorkoutState, programId: string, days: WorkoutDay[], dayId: string, replacement: WorkoutDay,
+): WorkoutState {
+    const index = getRotationIndex(state, programId, days)
+    if (days[index]?.id !== dayId) return state
+    return pointRotationAt(state, programId, days.map(day => day.id === dayId ? replacement : day), index)
+}
+
 export function advanceRotation(state: WorkoutState, programId: string, days: WorkoutDay[], session: CompletedSession): WorkoutState {
     const index = days.findIndex(day => day.id === session.dayId)
     if (index < 0) return state
@@ -84,11 +92,24 @@ export function reconcileTrainingCompletions(
     }, state)
 }
 
-function readRotation(storage: Storage, activeProgramId: string, programs: TrainingProgram[]): WorkoutState {
+export function readRotation(storage: Pick<Storage, 'getItem'>, activeProgramId: string, programs: TrainingProgram[]): WorkoutState {
     const initial = parseWorkoutState(storage.getItem(STATE_KEY), activeProgramId)
     return programs.reduce((current, program) => {
         const programDays = getActiveDays(program)
-        if (Object.hasOwn(current.currentDayIdByProgram ?? {}, program.id)) return current
+        const savedIds = current.currentDayIdByProgram ?? {}
+        if (Object.hasOwn(savedIds, program.id)) {
+            let id = savedIds[program.id]
+            const visited = new Set<string>()
+            // The plan can commit before the separate rotation write. Follow the stored replacement.
+            while (!visited.has(id)) {
+                visited.add(id)
+                const successor = program.days.find(day => day.id === id && day.isDeleted)?.replacedByDayId
+                if (!successor) break
+                id = successor
+            }
+            const index = programDays.findIndex(day => day.id === id)
+            return index >= 0 && id !== savedIds[program.id] ? pointRotationAt(current, program.id, programDays, index) : current
+        }
         return pointRotationAt(current, program.id, programDays, getRotationIndex(current, program.id, programDays))
     }, initial)
 }
@@ -164,6 +185,9 @@ export function useRotation(activeProgram: TrainingProgram | null, programs: Tra
         setCurrentDayIndex,
         removeDay: (dayId: string) => {
             if (activeProgramId) void update(prev => removeDayFromRotation(prev, activeProgramId, days, dayId)).catch(reportStorageError)
+        },
+        replaceDay: (id: string, replacement: WorkoutDay) => {
+            if (activeProgramId) void update(prev => replaceRotationDay(prev, activeProgramId, days, id, replacement)).catch(reportStorageError)
         },
         // Anchor the current ID before a structural edit, including newly created programs.
         anchorRotation: () => {

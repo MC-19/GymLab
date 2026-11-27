@@ -1,5 +1,5 @@
-import { ArrowDown, ArrowUp, ChevronRight, Copy, Dumbbell, Pencil, Plus, RotateCcw, Trash2, X, Zap } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { ArrowDown, ArrowUp, ChevronRight, Copy, Dumbbell, Pencil, Plus, Repeat2, RotateCcw, Trash2, X, Zap } from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Badge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
@@ -9,14 +9,15 @@ import { Input } from '../components/ui/Input'
 import { Modal } from '../components/ui/Modal'
 import { ThemeToggle } from '../components/ui/ThemeToggle'
 import { useWorkoutContext } from '../context/WorkoutContext'
+import { getActiveDays } from '../hooks/usePrograms'
 
 export function RoutinesPage() {
     const navigate = useNavigate()
     const location = useLocation()
     const {
-        days, addDay, deleteDay, duplicateDay, updateDay, reorderDays, showToast,
+        days, addDay, deleteDay, duplicateDay, replaceDay, updateDay, reorderDays, showToast,
         currentDayIndex, resetRotation, setCurrentDayIndex, getCurrentDay,
-        activeProgram,
+        activeProgram, programs,
     } = useWorkoutContext()
 
     const [showAddModal, setShowAddModal] = useState(false)
@@ -24,6 +25,13 @@ export function RoutinesPage() {
     const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
     const [showResetConfirm, setShowResetConfirm] = useState(false)
     const [renameDay, setRenameDay] = useState<{ id: string; name: string } | null>(null)
+    const [replacement, setReplacement] = useState<{ dayId: string; source: string; name: string } | null>(null)
+    const closeReplacement = useCallback(() => setReplacement(null), [])
+    const replacementSources = replacement ? programs.filter(program => !program.isDeleted)
+        .flatMap(program => getActiveDays(program).filter(day => day.id !== replacement.dayId).map(day => ({
+            id: JSON.stringify([program.id, day.id]), label: `${program.name} · ${day.name}`, day,
+        }))) : []
+
     const [bannerVisible, setBannerVisible] = useState(() => location.state?.fromOnboarding === true)
 
     useEffect(() => {
@@ -51,6 +59,20 @@ export function RoutinesPage() {
 
     const handleDuplicate = (dayId: string) => {
         duplicateDay(dayId)
+    }
+
+    const handleReplace = () => {
+        if (!replacement) return
+        const original = days.find(day => day.id === replacement.dayId)
+        if (!original) return
+        const source = replacementSources.find(item => item.id === replacement.source)?.day
+        if (replacement.source && !source) return
+        const plan = source ?? { ...original, exercises: [] }
+        const result = replaceDay(original.id, { ...plan, name: replacement.name.trim() || plan.name })
+        if (result) {
+            setReplacement(null)
+            navigate(`/day/${result.id}`)
+        }
     }
 
     const handleReset = () => {
@@ -234,7 +256,7 @@ export function RoutinesPage() {
 
                                     {/* Actions */}
                                     <div className={[
-                                        'flex items-center gap-1 px-3 pb-3 pt-2 border-t',
+                                        'flex flex-wrap items-center gap-1 px-3 pb-3 pt-2 border-t',
                                         isActive
                                             ? 'border-blue-200/40 dark:border-blue-500/15'
                                             : 'border-gray-100/80 dark:border-white/5',
@@ -275,6 +297,10 @@ export function RoutinesPage() {
                                         </IconButton>
                                         <IconButton onClick={() => handleDuplicate(day.id)} variant="ghost" size="sm" title="Copiar día">
                                             <Copy size={14} />
+                                        </IconButton>
+                                        <IconButton onClick={() => setReplacement({ dayId: day.id, source: '', name: '' })}
+                                            variant="ghost" size="md" title="Sustituir día">
+                                            <Repeat2 size={16} />
                                         </IconButton>
                                         <IconButton onClick={() => setDeleteConfirm(day.id)} variant="danger" size="sm" title="Eliminar día">
                                             <Trash2 size={14} />
@@ -319,6 +345,24 @@ export function RoutinesPage() {
                     <Button fullWidth size="lg" onClick={handleAddDay} disabled={!newDayName.trim()}>
                         Crear día
                     </Button>
+                </div>
+            </Modal>
+
+            <Modal open={replacement !== null} onClose={closeReplacement} title="Sustituir día">
+                <div className="space-y-4">
+                    <label className="block text-sm font-semibold">
+                        Plan del nuevo día
+                        <select value={replacement?.source ?? ''}
+                            onChange={event => setReplacement(previous => previous && { ...previous, source: event.target.value })}
+                            className="mt-1 block w-full rounded-xl bg-gray-100 dark:bg-white/10 p-3">
+                            <option value="">Día vacío</option>
+                            {replacementSources.map(item => <option key={item.id} value={item.id}>{item.label}</option>)}
+                        </select>
+                    </label>
+                    <Input label="Nombre (opcional)" value={replacement?.name ?? ''}
+                        onChange={event => setReplacement(previous => previous && { ...previous, name: event.target.value })} />
+                    <p className="text-sm text-gray-500">El nuevo día ocupará el mismo lugar en la rotación. El día retirado seguirá en el historial.</p>
+                    <Button fullWidth onClick={handleReplace}>Sustituir día</Button>
                 </div>
             </Modal>
 

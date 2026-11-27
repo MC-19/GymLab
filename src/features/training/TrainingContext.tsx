@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
 import { getActiveDays, loadPrograms } from '../../hooks/usePrograms'
-import { getRotationIndex, parseWorkoutState } from '../../hooks/useRotation'
+import { getRotationIndex, readRotation } from '../../hooks/useRotation'
 import { useWorkoutContext } from '../../context/WorkoutContext'
 import type { CompletedSession, TrainingProgram, WorkoutDay } from '../../types'
 import { trainingRepository } from './repository'
@@ -113,7 +113,7 @@ export function TrainingProvider({ children }: { children: ReactNode }) {
                     const latest = loadPrograms(localStorage).find(item =>
                         item.id === program.id && !item.isArchived && !item.isDeleted)
                     const days = latest ? getActiveDays(latest) : []
-                    const rotation = parseWorkoutState(localStorage.getItem('gymlab_state'), program.id)
+                    const rotation = readRotation(localStorage, program.id, latest ? [latest] : [])
                     if (days[getRotationIndex(rotation, program.id, days)]?.id !== day.id) {
                         throw new Error('La rotación cambió. Vuelve a intentarlo desde Inicio.')
                     }

@@ -51,7 +51,7 @@ export function useWorkoutWeeks(days: WorkoutDay[], updateExerciseInDay: UpdateE
 
         return {
             week: newWeek,
-            shouldSuggestIncrease: shouldSuggestWeightIncrease(previousWeek),
+            shouldSuggestIncrease: !exercise.goals && shouldSuggestWeightIncrease(previousWeek),
         }
     }, [findExercise, updateExerciseInDay])
 

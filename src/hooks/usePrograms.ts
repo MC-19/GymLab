@@ -107,13 +107,13 @@ export function usePrograms() {
     }, [setActiveProgramIdRaw])
 
     /** Create a new program and set it as active */
-    const createProgram = useCallback((name: string): TrainingProgram => {
+    const createProgram = useCallback((name: string, initialDays: WorkoutDay[] = []): TrainingProgram => {
         const newProgram: TrainingProgram = {
             id: generateId(),
             name: name.trim(),
             createdAt: new Date().toISOString(),
             isArchived: false,
-            days: [],
+            days: initialDays,
         }
         setPrograms(prev => [...prev, newProgram])
         setActiveProgramIdRaw(newProgram.id)
@@ -132,17 +132,8 @@ export function usePrograms() {
             createdAt: new Date().toISOString(),
             order: i,
         }))
-        const newProgram: TrainingProgram = {
-            id: generateId(),
-            name: name.trim(),
-            createdAt: new Date().toISOString(),
-            isArchived: false,
-            days,
-        }
-        setPrograms(prev => [...prev, newProgram])
-        setActiveProgramIdRaw(newProgram.id)
-        return newProgram
-    }, [setPrograms, setActiveProgramIdRaw])
+        return createProgram(name, days)
+    }, [createProgram])
 
     const updateProgram = useCallback((id: string, updates: Partial<Pick<TrainingProgram, 'name' | 'isArchived' | 'isDeleted'>>) => {
         setPrograms(prev => changeProgram(prev, id, updates))

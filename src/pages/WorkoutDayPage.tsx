@@ -1,6 +1,8 @@
+import { ExerciseGoalsEditor } from '../features/programs/ExerciseGoalsEditor'
+import { goalLabel } from '../features/programs/goals'
 import { StartTrainingButton } from '../features/training/StartTrainingButton'
-import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight, Dumbbell, Pencil, Plus, Search, Trash2 } from 'lucide-react'
-import { useState } from 'react'
+import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight, Copy, Dumbbell, Pencil, Plus, Repeat2, Search, Target, Trash2 } from 'lucide-react'
+import { useCallback, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ExerciseCatalogSheet } from '../components/exercises/ExerciseCatalogSheet'
 import { Badge } from '../components/ui/Badge'
@@ -29,10 +31,13 @@ const MUSCLE_GROUPS: MuscleGroup[] = [
 export function WorkoutDayPage() {
     const { dayId } = useParams<{ dayId: string }>()
     const navigate = useNavigate()
-    const { days, updateDay, deleteExercise, addExercise, updateExercise, reorderExercises } = useWorkoutContext()
+    const { days, updateDay, deleteExercise, addExercise, updateExercise, reorderExercises, duplicateExercise, replaceExercise } = useWorkoutContext()
 
     const day = days.find(d => d.id === dayId)
 
+    const [goalExercise, setGoalExercise] = useState<Exercise | null>(null)
+    const closeGoalEditor = useCallback(() => setGoalExercise(null), [])
+    const [replacementId, setReplacementId] = useState<string | null>(null)
     const [showAddSheet, setShowAddSheet] = useState(false)
     const [editExercise, setEditExercise] = useState<Exercise | null>(null)
     const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
@@ -54,10 +59,16 @@ export function WorkoutDayPage() {
         )
     }
 
+    const closeCatalog = () => {
+        setShowAddSheet(false)
+        setReplacementId(null)
+    }
+
     const handleSelectExercise = (name: string, muscleGroup?: MuscleGroup, catalogId?: string) => {
         if (!name.trim()) return
-        addExercise(day.id, name.trim(), muscleGroup, catalogId)
-        setShowAddSheet(false)
+        if (replacementId) replaceExercise(day.id, replacementId, name.trim(), muscleGroup, catalogId)
+        else addExercise(day.id, name.trim(), muscleGroup, catalogId)
+        closeCatalog()
     }
 
     const handleEditExercise = () => {
@@ -226,7 +237,8 @@ export function WorkoutDayPage() {
                                                 <div className="flex items-center gap-2 mt-1 flex-wrap">
                                                     {ex.muscleGroup && <Badge variant="gold" size="sm" className="text-[10px] px-2 py-0 border-none bg-blue-500/10 text-blue-600 dark:text-blue-400">{ex.muscleGroup}</Badge>}
                                                     <Badge variant={completed === total && total > 0 ? 'green' : 'gray'} size="sm" className="text-[10px] px-2 py-0 border-none">
-                                                        {total > 0 ? `${completed}/${total} series` : 'Sin series'}
+                                                        {ex.goals && <p className="mt-2 text-xs text-gray-500">{goalLabel(ex.goals)}</p>}
+                                                {total > 0 ? `${completed}/${total} series` : 'Sin series'}
                                                     </Badge>
                                                 </div>
                                                 {total > 0 && (
@@ -239,7 +251,7 @@ export function WorkoutDayPage() {
                                     </button>
                                     {/* Actions */}
                                     <div className={[
-                                        'flex items-center gap-1 px-3 pb-3 border-t pt-2',
+                                        'flex flex-wrap items-center gap-1 px-3 pb-3 border-t pt-2',
                                         'border-gray-100/80 dark:border-white/5',
                                     ].join(' ')}>
                                         {/* Reorder */}
@@ -261,10 +273,20 @@ export function WorkoutDayPage() {
                                                 <ArrowDown size={13} />
                                             </IconButton>
                                         </div>
-                                        <IconButton onClick={() => openEdit(ex)} variant="ghost" size="sm">
+                                        <IconButton onClick={() => setGoalExercise(ex)} variant="ghost" size="md" title="Objetivos del ejercicio">
+                                            <Target size={16} />
+                                        </IconButton>
+                                        <IconButton onClick={() => duplicateExercise(day.id, ex.id)} variant="ghost" size="md" title="Duplicar ejercicio">
+                                            <Copy size={16} />
+                                        </IconButton>
+                                        <IconButton onClick={() => { setReplacementId(ex.id); setShowAddSheet(true) }}
+                                            variant="ghost" size="md" title="Sustituir ejercicio">
+                                            <Repeat2 size={16} />
+                                        </IconButton>
+                                        <IconButton onClick={() => openEdit(ex)} variant="ghost" size="sm" title="Editar ejercicio">
                                             <Pencil size={14} />
                                         </IconButton>
-                                        <IconButton onClick={() => setDeleteConfirm(ex.id)} variant="danger" size="sm">
+                                        <IconButton onClick={() => setDeleteConfirm(ex.id)} variant="danger" size="sm" title="Eliminar ejercicio">
                                             <Trash2 size={14} />
                                         </IconButton>
                                     </div>
@@ -288,10 +310,19 @@ export function WorkoutDayPage() {
 
             {/* Catalog Sheet */}
             <ExerciseCatalogSheet 
-                open={showAddSheet} 
-                onClose={() => setShowAddSheet(false)} 
-                onSelect={handleSelectExercise} 
+                open={showAddSheet}
+                onClose={closeCatalog}
+                onSelect={handleSelectExercise}
+                title={replacementId ? 'Sustituir ejercicio' : 'Añadir ejercicio'}
+                actionLabel={replacementId ? 'Sustituir y conservar historial' : undefined}
             />
+
+            {goalExercise && <ExerciseGoalsEditor key={goalExercise.id} exercise={goalExercise}
+                onClose={closeGoalEditor}
+                onSave={goals => {
+                    updateExercise(day.id, goalExercise.id, { goals })
+                    setGoalExercise(null)
+                }} />}
 
             {/* Edit Exercise Sheet */}
             <BottomSheet open={editExercise !== null} onClose={() => { setEditExercise(null); setExName(''); setEditMuscleGroup(undefined); setEditCatalogId(undefined) }} title="Editar ejercicio">

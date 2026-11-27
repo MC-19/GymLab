@@ -6,7 +6,8 @@ import { Modal } from '../../components/ui/Modal'
 import { getStorageErrorMessage, isStorageQuotaError } from '../../services/storageErrors'
 import { useTimer } from '../../context/TimerContext'
 import { useTraining } from './TrainingContext'
-import { previousExercise, type SessionSet, type SetFields } from './session'
+import { goalLabel } from '../programs/goals'
+import { previousExercise, recommendedIncrement, type SessionSet, type SetFields } from './session'
 
 const fields = [
     { key: 'weight', label: 'kg', min: 0, max: 100000, step: 'any', inputMode: 'decimal' },
@@ -165,26 +166,51 @@ export function TrainingPage() {
             {message && <p role="alert" className="sticky top-2 z-20 p-3 rounded-xl text-sm bg-red-50 text-red-800 dark:bg-red-950 dark:text-red-200">{message}</p>}
             {active.exercises.map(exercise => {
                 const previous = previousExercise(exercise, history)
+                const goals = exercise.goals
+                const completedSets = goals ? exercise.sets.filter(set => set.type === 'normal')
+                    .slice(0, goals.sets).filter(set => set.completed).length : 0
+                const increment = recommendedIncrement(goals, previous?.sets ?? [])
                 return (
                     <section key={exercise.id} className="p-4 rounded-2xl bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 space-y-3">
                         <h2 className="font-semibold">{exercise.name}</h2>
+                        {goals && (
+                            <div className="rounded-xl bg-blue-50 dark:bg-blue-950/50 p-3 text-sm text-blue-900 dark:text-blue-100">
+                                <p className="font-semibold">{goalLabel(goals)}</p>
+                                <p className="mt-1 text-xs">{completedSets}/{goals.sets} series hechas · {goals.restSeconds ? `${goals.restSeconds} s de descanso` : 'Sin temporizador'}</p>
+                                {increment !== null && (
+                                    <p className="mt-2 text-sm font-medium">
+                                        La última sesión cumple el objetivo actual. Puedes probar +{increment.toLocaleString('es-ES')} kg.
+                                    </p>
+                                )}
+                            </div>
+                        )}
                         {previous ? (
                             <details className="text-xs text-gray-500">
                                 <summary className="cursor-pointer py-1">Última sesión · {new Date(previous.completedAt).toLocaleDateString('es-ES')}</summary>
                                 <ul className="mt-1 space-y-1">
                                     {previous.sets.map(set => (
-                                        <li key={set.id}>{set.weight} kg × {set.reps} reps{set.rir !== null ? ` · RIR ${set.rir}` : ''}</li>
+                                        <li key={set.id}>
+                                            {set.weight} kg × {set.reps} reps{set.rir !== null ? ` · RIR ${set.rir}` : ''}
+                                            {set.type === 'warmup' ? ' · Calentamiento' : set.type === 'dropset' ? ' · Dropset' : ''}
+                                        </li>
                                     ))}
                                 </ul>
                             </details>
                         ) : <p className="text-xs text-gray-500">Primera sesión registrada</p>}
-                        {exercise.sets.map((set, index) => (
-                            <SetEditor key={set.id} set={set} index={index} last={previous?.sets[index]} disabled={busy}
+                        {exercise.sets.map((set, index) => {
+                            const typeIndex = exercise.sets.slice(0, index).filter(item => item.type === set.type).length
+                            const previousSets = previous?.sets.filter(item => item.type === set.type) ?? []
+                            const last = previousSets.some(item => item.workingOrder !== undefined)
+                                ? previousSets.find(item => item.workingOrder === typeIndex + 1)
+                                : previousSets[typeIndex]
+                            return <SetEditor key={set.id} set={set} index={index} last={last} disabled={busy}
                                 onChange={patch => perform(() => changeSet(active.id, exercise.id, set.id, patch))}
                                 onToggle={() => void perform(async () => {
-                                    if (await markSet(active.id, exercise.id, set.id, !set.completed)) startTimer()
+                                    if (!await markSet(active.id, exercise.id, set.id, !set.completed)) return
+                                    if (goals?.restSeconds === 0) stopTimer()
+                                    else startTimer(goals?.restSeconds)
                                 })} />
-                        ))}
+                        })}
                         <Button variant="ghost" size="sm" disabled={busy} icon={<Plus size={16} />}
                             onClick={() => void perform(() => addSet(active.id, exercise.id))}>Añadir serie</Button>
                     </section>

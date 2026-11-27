@@ -44,5 +44,15 @@ export function useWorkoutDays(days: WorkoutDay[], setDays: SetDays) {
         return copy
     }, [days, setDays])
 
-    return { addDay, updateDay, deleteDay, reorderDays, duplicateDay }
+    const replaceDay = useCallback((dayId: string, source: WorkoutDay) => {
+        const original = days.find(day => day.id === dayId)
+        if (!original) return
+        const replacement = { ...copyWorkoutDay(source), order: original.order }
+        setDays(previous => previous.flatMap(day => day.id === dayId
+            ? [replacement, { ...day, isDeleted: true, replacedByDayId: replacement.id }]
+            : [day]))
+        return replacement
+    }, [days, setDays])
+
+    return { addDay, updateDay, deleteDay, reorderDays, duplicateDay, replaceDay }
 }

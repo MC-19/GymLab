@@ -1,6 +1,6 @@
 import { Bell, CalendarDays, ChevronRight, ListChecks, Shuffle } from 'lucide-react'
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { StartTrainingButton } from '../features/training/StartTrainingButton'
 import { OnboardingCard } from '../components/ui/OnboardingCard'
 import { ThemeToggle } from '../components/ui/ThemeToggle'
@@ -103,7 +103,12 @@ export function Dashboard() {
 
                 {/* ── EMPTY: Onboarding ────────────────────────────── */}
                 {days.length === 0 ? (
-                    <OnboardingCard onSelect={handleOnboardingSelect} />
+                    <>
+                        <OnboardingCard onSelect={handleOnboardingSelect} />
+                        <Link to="/programs" className="block py-3 text-center text-sm font-semibold text-blue-600 dark:text-blue-400">
+                            Ver plantillas de entrenamiento
+                        </Link>
+                    </>
                 ) : (
                     <>
                         {/* Streak Banner */}

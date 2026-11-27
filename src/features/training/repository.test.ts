@@ -6,7 +6,8 @@ import { advanceRotation, parseWorkoutState, reconcileTrainingCompletions, write
 import { backupToStorage, parseBackup, readGymLabStorage } from '../../utils/backup'
 import { recoverTrainingRestore, restoreTrainingBackup } from './backup'
 import { IndexedTrainingRepository } from './repository'
-import { chronological, createSession, previousExercise, summarizeSession, type WorkoutSession } from './session'
+import { DEFAULT_GOALS } from '../programs/goals'
+import { chronological, createSession, emptySessionSet, previousExercise, recommendedIncrement, summarizeSession, type WorkoutSession } from './session'
 
 const day: WorkoutDay = {
     id: 'a', name: 'Torso', order: 0, createdAt: '2024-01-01',
@@ -140,6 +141,42 @@ describe('GymLab Training persistence', () => {
         expect(await repository.list()).toEqual(expect.arrayContaining([done, active]))
         expect(legacy.days[0].exercises[0].weeks[0]).not.toHaveProperty('completedAt')
         expect(() => parseBackup(JSON.stringify({ ...snapshot, trainingSessions: [active, { ...active, id: 'other' }] }))).toThrow('inválidas')
+    })
+
+    it('keeps skipped working slots and historical goals through IndexedDB and a v3 restore', async () => {
+        const goals = { ...DEFAULT_GOALS, sets: 2 }
+        const plannedDay = { ...day, exercises: [{ ...day.exercises[0], goals }] }
+        const draft = await repository.start(createSession(program, plannedDay))
+        await repository.edit(draft.id, session => ({
+            ...session,
+            exercises: session.exercises.map(exercise => ({
+                ...exercise,
+                sets: [...exercise.sets, emptySessionSet()].map((set, i) => i === 1 || i === 3
+                    ? { ...set, weight: 80, reps: 12, rir: 2, completed: true }
+                    : set),
+            })),
+        }))
+        const done = await repository.finish(draft.id)
+        expect(done.exercises[0].sets.map(set => set.workingOrder)).toEqual([1, 3])
+        expect(recommendedIncrement(goals, done.exercises[0].sets)).toBeNull()
+
+        const updatedDay = { ...plannedDay, exercises: [{ ...plannedDay.exercises[0], goals: { ...goals, sets: 4 } }] }
+        const snapshot = {
+            version: 3, days: [updatedDay],
+            localStorage: { gymlab_programs: JSON.stringify([{ ...program, days: [updatedDay] }]) },
+            trainingSessions: await repository.list(),
+        }
+        const storage = new MemoryStorage()
+        const parsed = parseBackup(JSON.stringify(snapshot))
+        await restoreTrainingBackup(storage, {}, [], repository)
+        await restoreTrainingBackup(storage, backupToStorage(parsed, '', ''), parsed.trainingSessions, repository)
+        const [restored] = await repository.list()
+        expect(restored).toEqual(done)
+        expect(restored.exercises[0].goals?.sets).toBe(2)
+        expect(recommendedIncrement(goals, restored.exercises[0].sets)).toBeNull()
+
+        snapshot.trainingSessions[0].exercises[0].sets[1].workingOrder = 1
+        expect(() => parseBackup(JSON.stringify(snapshot))).toThrow('sesiones de entrenamiento inválidas')
     })
 
     it('preserves the imported rotation when keeping existing Training sessions from a legacy backup', async () => {
