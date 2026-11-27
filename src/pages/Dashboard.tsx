@@ -79,7 +79,10 @@ export function Dashboard() {
             {/* Header */}
             <div className="sticky top-0 z-30 bg-white/80 dark:bg-black/80 backdrop-blur-xl border-b border-gray-100/60 dark:border-white/8">
                 <div className="flex items-center justify-between px-5 h-14 max-w-lg mx-auto">
-                    <img src="/icons/icon-512.png" alt="GymLab" className="h-30 w-auto object-contain" />
+                    <div className="shrink-0" aria-label="GymLab">
+                        <img src="/brand/gymlab-logo-light.svg" alt="GymLab" className="h-9 w-auto max-w-[148px] dark:hidden" />
+                        <img src="/brand/gymlab-logo-dark.svg" alt="GymLab" className="hidden h-9 w-auto max-w-[148px] dark:block" />
+                    </div>
                     <div className="flex items-center gap-2">
                         <button
                             onClick={handleOpenChangelog}
