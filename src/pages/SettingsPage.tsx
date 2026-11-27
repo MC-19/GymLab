@@ -370,7 +370,8 @@ export function SettingsPage() {
                 {/* About */}
                 <Section title="Sobre GymLab">
                     <div className="flex flex-col items-center gap-3 py-2">
-                        <img src="/icons/icon-512.png" alt="GymLab" className="h-40 w-auto object-contain" />
+                        <img src="/brand/gymlab-logo-light.svg" alt="GymLab" className="h-40 w-full max-w-[240px] object-contain dark:hidden" />
+                        <img src="/brand/gymlab-logo-dark.svg" alt="GymLab" className="hidden h-40 w-full max-w-[240px] object-contain dark:block" />
                         <div className="space-y-1 text-center text-sm text-gray-600 dark:text-gray-500">
                             <p>Versión <span className="font-medium text-gray-900 dark:text-gray-300">1.4.1</span></p>
                             <p>Datos guardados localmente en tu dispositivo.</p>
