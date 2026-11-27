@@ -1,5 +1,6 @@
 import { Link, useParams } from 'react-router-dom'
 import { ChevronRight, Trophy } from 'lucide-react'
+import { HistoryNavigation } from '../../components/layout/HistoryNavigation'
 import { useTraining } from './TrainingContext'
 import { goalLabel } from '../programs/goals'
 import { summarizeSession } from './session'
@@ -16,10 +17,47 @@ export function SessionHistoryPage() {
     const session = sessionId ? history.find(item => item.id === sessionId) : undefined
     const summary = session && summarizeSession(session)
 
+    if (!sessionId) {
+        return (
+            <>
+                <HistoryNavigation view="sessions" />
+                <div className="mx-auto max-w-lg space-y-3 px-5 py-5">
+                    {error && <p role="alert" className="text-sm text-red-700 dark:text-red-400">{error}</p>}
+                    {loading ? <p role="status" className="text-sm text-gray-600 dark:text-gray-400">Cargando sesiones…</p> : history.length > 0 ? (
+                        <ul className="space-y-2" aria-label="Sesiones de entrenamiento">
+                            {history.map(item => (
+                                <li key={item.id}>
+                                    <Link
+                                        to={`/history/sessions/${item.id}`}
+                                        className="flex items-center justify-between gap-2 rounded-2xl border border-gray-200 bg-gray-50 p-4 focus-visible:outline-2 focus-visible:outline-blue-500 dark:border-white/10 dark:bg-white/5"
+                                    >
+                                        <span className="min-w-0 wrap-break-word">
+                                            <span className="block font-semibold">{item.dayName}</span>
+                                            <span className="block text-sm text-gray-600 dark:text-gray-400">
+                                                <time dateTime={item.completedAt!}>{new Date(item.completedAt!).toLocaleDateString('es-ES', { dateStyle: 'medium' })}</time>
+                                                {' · '}{item.programName}
+                                            </span>
+                                        </span>
+                                        <ChevronRight size={18} className="shrink-0" aria-hidden="true" />
+                                    </Link>
+                                </li>
+                            ))}
+                        </ul>
+                    ) : !error && (
+                        <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-white/10 dark:bg-white/5">
+                            <h2 className="font-semibold">Aún no hay sesiones</h2>
+                            <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">Aquí aparecerán los entrenamientos que finalices. Puedes consultar tus registros de ejercicios en Progresión.</p>
+                        </div>
+                    )}
+                </div>
+            </>
+        )
+    }
+
     return (
         <div className="mx-auto max-w-lg px-5 pt-5 pb-8 space-y-4">
-            <Link to={sessionId ? '/history/sessions' : '/history'} className="inline-flex items-center min-h-11 text-sm text-blue-600 dark:text-blue-400">
-                {sessionId ? 'Volver a sesiones' : 'Volver a Progresión'}
+            <Link to="/history" className="inline-flex items-center min-h-11 text-sm text-blue-700 dark:text-blue-400">
+                Volver a sesiones
             </Link>
             <h1 className="text-2xl font-bold">{session ? session.dayName : 'Sesiones de entrenamiento'}</h1>
             {loading || error ? <p className="text-sm text-gray-500">{error ?? 'Cargando sesiones…'}</p> : session && summary ? (
@@ -56,21 +94,7 @@ export function SessionHistoryPage() {
                     ))}
                     <Link to="/" className="inline-flex min-h-11 items-center text-sm font-semibold text-blue-600 dark:text-blue-400">Volver a Inicio</Link>
                 </>
-            ) : sessionId ? <p className="text-sm text-gray-500">No se encontró esta sesión.</p> : history.length ? (
-                <ul className="space-y-2">
-                    {history.map(item => (
-                        <li key={item.id}>
-                            <Link to={`/history/sessions/${item.id}`} className="flex items-center justify-between gap-2 rounded-2xl p-4 bg-gray-50 dark:bg-white/5">
-                                <span>
-                                    <span className="block font-semibold">{item.dayName}</span>
-                                    <span className="block text-sm text-gray-500">{item.programName} · {new Date(item.completedAt!).toLocaleDateString('es-ES')}</span>
-                                </span>
-                                <ChevronRight size={18} />
-                            </Link>
-                        </li>
-                    ))}
-                </ul>
-            ) : <p className="text-sm text-gray-500">Aquí aparecerán los entrenamientos que finalices.</p>}
+            ) : <p className="text-sm text-gray-600 dark:text-gray-400">No se encontró esta sesión.</p>}
         </div>
     )
 }

@@ -1,226 +1,193 @@
-import { ChevronRight, Dumbbell, Play, Plus, Search, X } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { ChevronDown, Dumbbell, Search, X } from 'lucide-react'
+import { useMemo, useRef, useState, type ReactNode } from 'react'
 import { EXERCISE_CATALOG } from '../../data/exerciseCatalog'
 import type { CatalogExercise, MuscleGroup } from '../../types'
 import { BottomSheet } from '../ui/BottomSheet'
+import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
+import { searchExerciseCatalog } from './catalogSearch'
+
+type Mode = 'add' | 'replace' | 'link'
 
 interface ExerciseCatalogSheetProps {
     open: boolean
     onClose: () => void
     onSelect: (name: string, muscleGroup?: MuscleGroup, catalogId?: string) => void
-    title?: string
-    actionLabel?: string
+    mode?: Mode
 }
 
-const MUSCLE_GROUPS: (MuscleGroup | 'Todos')[] = [
-    'Todos',
-    'Pecho',
-    'Espalda',
-    'Hombros',
-    'Bíceps',
-    'Tríceps',
-    'Antebrazos',
-    'Trapecios',
-    'Cuádriceps',
-    'Femorales',
-    'Glúteos',
-    'Gemelos',
-    'Lumbares',
-    'Aductores',
-    'Abductores',
-    'Abdomen',
-    'Cardio',
-    'Cuerpo completo'
-]
+const modes = {
+    add: { title: 'Añadir ejercicio', action: 'Añadir' },
+    replace: { title: 'Sustituir ejercicio', action: 'Sustituir' },
+    link: { title: 'Vincular ejercicio del catálogo', action: 'Vincular' },
+} satisfies Record<Mode, { title: string; action: string }>
 
-export function ExerciseCatalogSheet({ open, onClose, onSelect, title = "Añadir Ejercicio", actionLabel = "Añadir a mi rutina" }: ExerciseCatalogSheetProps) {
+const muscleGroups = [...new Set(EXERCISE_CATALOG.map(exercise => exercise.muscleGroup))]
+    .sort((first, second) => first.localeCompare(second, 'es'))
+
+function ExerciseMedia({ src, alt, className, fallback }: {
+    src?: string
+    alt: string
+    className: string
+    fallback: ReactNode
+}) {
+    const [failed, setFailed] = useState(false)
+    return src && !failed
+        ? <img src={src} alt={alt} className={className} loading="lazy" onError={() => setFailed(true)} />
+        : fallback
+}
+
+function CatalogPicker({ mode, onSelect }: {
+    mode: Mode
+    onSelect: ExerciseCatalogSheetProps['onSelect']
+}) {
     const [search, setSearch] = useState('')
-    const [filterGroup, setFilterGroup] = useState<MuscleGroup | 'Todos'>('Todos')
+    const [group, setGroup] = useState<MuscleGroup>()
     const [expandedId, setExpandedId] = useState<string | null>(null)
-    const [customName, setCustomName] = useState('')
+    const [customName, setCustomName] = useState<string | null>(null)
+    const searchInput = useRef<HTMLInputElement>(null)
+    const { action } = modes[mode]
 
-    useEffect(() => {
-        if (open) return
-        const timer = window.setTimeout(() => {
-            setSearch('')
-            setFilterGroup('Todos')
-            setExpandedId(null)
-            setCustomName('')
-        }, 300)
-        return () => window.clearTimeout(timer)
-    }, [open])
+    const results = useMemo(() => searchExerciseCatalog(search, group), [search, group])
 
-    const filteredExercises = useMemo(() => {
-        return EXERCISE_CATALOG.filter(ex => {
-            const matchesSearch = ex.name.toLowerCase().includes(search.toLowerCase())
-            const matchesGroup = filterGroup === 'Todos' || ex.muscleGroup === filterGroup
-            return matchesSearch && matchesGroup
-        })
-    }, [search, filterGroup])
-
-    const handleSelect = (ex: CatalogExercise) => {
-        onSelect(ex.name, ex.muscleGroup, ex.id)
-        onClose()
-    }
-
-    const handleAddCustom = () => {
-        if (!customName.trim()) return
-        onSelect(customName.trim())
-        onClose()
+    const chooseExercise = (exercise: CatalogExercise) => {
+        onSelect(exercise.name, exercise.muscleGroup, exercise.id)
     }
 
     return (
-        <BottomSheet
-            open={open}
-            onClose={onClose}
-            className="h-[95vh]"
-            noPadding
-        >
-            <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-900 pb-4">
-                {/* Fixed Search and Filter Header */}
-                <div className="px-4 pb-3 pt-3 space-y-3 shrink-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md sticky top-0 z-10 border-b border-gray-200/60 dark:border-white/5">
-                    
-                    <div className="flex items-center gap-3">
-                        <div className="relative flex-1">
-                            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+        <>
+            {mode === 'replace' && <p className="px-4 pt-3 text-sm text-gray-600 dark:text-gray-400">El historial del ejercicio anterior se conserva.</p>}
+
+            <div className="sticky top-0 z-10 space-y-3 border-b border-gray-200 bg-white px-4 py-3 dark:border-white/10 dark:bg-gray-900">
+                {customName === null && (
+                    <>
+                        <div className="relative">
+                            <Search size={18} className="pointer-events-none absolute left-3 top-3.5 text-gray-600 dark:text-gray-400" aria-hidden="true" />
                             <input
-                                type="text"
-                                placeholder={title ? `${title}...` : "Buscar ejercicio..."}
+                                ref={searchInput}
+                                type="search"
+                                aria-label="Buscar ejercicio"
+                                placeholder="Buscar ejercicio"
+                                enterKeyHint="search"
                                 value={search}
-                                onChange={e => setSearch(e.target.value)}
-                                className="w-full pl-10 pr-9 py-2.5 bg-gray-100 dark:bg-white/5 border border-transparent rounded-2xl text-[15px] focus:bg-white dark:focus:bg-gray-800 focus:border-blue-500/40 focus:shadow-sm transition-all outline-none text-gray-900 dark:text-white"
+                                onChange={event => setSearch(event.target.value)}
+                                className="min-h-11 w-full rounded-xl bg-gray-100 pl-10 pr-12 text-base text-gray-900 placeholder:text-gray-600 focus-visible:outline-2 focus-visible:outline-blue-500 dark:bg-white/10 dark:text-white dark:placeholder:text-gray-400 [&::-webkit-search-cancel-button]:appearance-none"
                             />
                             {search && (
                                 <button
-                                    onClick={() => setSearch('')}
-                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 p-1.5 hover:text-gray-600 dark:hover:text-gray-200"
+                                    type="button"
+                                    onClick={() => {
+                                        setSearch('')
+                                        searchInput.current?.focus()
+                                    }}
+                                    aria-label="Limpiar búsqueda"
+                                    className="absolute right-0 top-0 grid size-11 place-items-center rounded-xl text-gray-600 focus-visible:outline-2 focus-visible:outline-blue-500 dark:text-gray-400"
                                 >
-                                    <X size={16} />
+                                    <X size={18} aria-hidden="true" />
                                 </button>
                             )}
                         </div>
-                        <button 
-                            onClick={onClose}
-                            className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 dark:bg-white/5 text-gray-500 hover:text-gray-900 hover:bg-gray-200 dark:hover:text-white dark:hover:bg-white/10 transition-colors shrink-0"
-                        >
-                            <X size={18} />
-                        </button>
-                    </div>
-
-                    <div className="flex gap-2 overflow-x-auto pb-1 hide-scrollbar -mx-4 px-4 snap-x">
-                        {MUSCLE_GROUPS.map(group => (
-                            <button
-                                key={group}
-                                onClick={() => setFilterGroup(group)}
-                                className={`whitespace-nowrap px-4 py-2 rounded-xl text-sm font-semibold transition-all snap-start ${filterGroup === group
-                                        ? 'bg-blue-600 text-white shadow-sm'
-                                        : 'bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/10'
-                                    }`}
+                        <label className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Grupo muscular
+                            <select
+                                value={group ?? ''}
+                                onChange={event => setGroup((event.target.value as MuscleGroup | '') || undefined)}
+                                className="min-h-11 min-w-0 flex-1 rounded-xl bg-gray-100 px-2 text-base text-gray-900 focus-visible:outline-2 focus-visible:outline-blue-500 dark:bg-gray-800 dark:text-white"
                             >
-                                {group}
-                            </button>
-                        ))}
-                    </div>
-                </div>
+                                <option value="">Todos</option>
+                                {muscleGroups.map(item => <option key={item} value={item}>{item}</option>)}
+                            </select>
+                        </label>
+                    </>
+                )}
+                {mode !== 'link' && (
+                    <Button variant="ghost" className="min-h-11" type="button" onClick={() => setCustomName(customName === null ? search.trim() : null)}>
+                        {customName === null ? 'Crear ejercicio personalizado' : 'Volver al catálogo'}
+                    </Button>
+                )}
+            </div>
 
-                {/* Catalog List */}
-                <div className="overflow-y-auto px-4 py-2 space-y-2">
-                    {filteredExercises.length > 0 ? (
-                        filteredExercises.map(ex => {
-                            const isExpanded = expandedId === ex.id
-                            return (
-                                <div
-                                    key={ex.id}
-                                    className={`rounded-2xl border transition-all duration-200 overflow-hidden ${isExpanded
-                                            ? 'bg-blue-50/50 dark:bg-blue-500/5 border-blue-200 dark:border-blue-500/20'
-                                            : 'bg-gray-50 dark:bg-white/5 border-gray-100 dark:border-white/10 hover:border-gray-300 dark:hover:border-white/20'
-                                        }`}
-                                >
+            {customName !== null ? (
+                <form className="space-y-3 p-4" onSubmit={event => {
+                    event.preventDefault()
+                    if (customName.trim()) onSelect(customName.trim())
+                }}>
+                    <Input autoFocus label="Nombre del ejercicio" value={customName} onChange={event => setCustomName(event.target.value)} />
+                    <Button fullWidth size="lg" type="submit" disabled={!customName.trim()}>
+                        {mode === 'replace' ? 'Sustituir por personalizado' : 'Crear y añadir'}
+                    </Button>
+                </form>
+            ) : results.length ? (
+                <ul role="list" className="divide-y divide-gray-200 px-4 dark:divide-white/10">
+                    {results.map(exercise => {
+                        const expanded = expandedId === exercise.id
+                        return (
+                            <li key={exercise.id} className="py-2">
+                                <div className="flex items-center gap-2">
                                     <button
-                                        onClick={() => setExpandedId(isExpanded ? null : ex.id)}
-                                        className="w-full flex items-center gap-3 p-3 text-left"
+                                        type="button"
+                                        aria-expanded={expanded}
+                                        onClick={() => setExpandedId(expanded ? null : exercise.id)}
+                                        className="flex min-h-11 min-w-0 flex-1 items-center gap-2 rounded-lg py-1 text-left focus-visible:outline-2 focus-visible:outline-blue-500"
                                     >
-                                        {/* Thumbnail Placeholder */}
-                                        <div className="w-12 h-12 rounded-xl bg-gray-200 dark:bg-white/10 flex items-center justify-center shrink-0">
-                                            {ex.imageUrl ? (
-                                                <img src={ex.imageUrl} alt={ex.name} className="w-full h-full object-cover rounded-xl" loading="lazy" />
-                                            ) : (
-                                                <Dumbbell size={20} className="text-gray-400 dark:text-gray-500" />
-                                            )}
+                                        <ExerciseMedia
+                                            src={exercise.imageUrl}
+                                            alt=""
+                                            className="size-9 shrink-0 rounded-lg bg-gray-100 object-cover dark:bg-white/10"
+                                            fallback={<Dumbbell className="size-9 shrink-0 rounded-lg bg-gray-100 p-2 text-gray-600 dark:bg-white/10 dark:text-gray-400" aria-hidden="true" />}
+                                        />
+                                        <div className="min-w-0 wrap-break-word">
+                                            <span className="block text-sm font-semibold">{exercise.name}</span>
+                                            <span className="block text-xs text-gray-600 dark:text-gray-400">{exercise.muscleGroup} · {exercise.equipment}</span>
                                         </div>
-                                        <div className="flex-1 min-w-0 pr-2">
-                                            <h3 className="font-bold text-gray-900 dark:text-white text-[15px] truncate mb-0.5">
-                                                {ex.name}
-                                            </h3>
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-xs text-gray-500">{ex.muscleGroup}</span>
-                                                <span className="text-[10px] text-gray-400 px-1.5 py-0.5 rounded-full bg-gray-200 dark:bg-white/10">
-                                                    {ex.equipment}
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <div className="shrink-0 flex items-center">
-                                            {isExpanded ? (
-                                                <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
-                                                    <ChevronRight size={18} className="rotate-90 transition-transform" />
-                                                </div>
-                                            ) : (
-                                                <div className="w-8 h-8 rounded-full hover:bg-black/5 dark:hover:bg-white/10 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold transition-all">
-                                                    <Plus size={20} />
-                                                </div>
-                                            )}
-                                        </div>
+                                        <ChevronDown size={15} className={`shrink-0 text-gray-600 dark:text-gray-400 ${expanded ? 'rotate-180' : ''}`} aria-hidden="true" />
                                     </button>
-
-                                    {/* Expanded Detail View */}
-                                    {isExpanded && (
-                                        <div className="p-4 pt-0 animate-slide-up border-t border-blue-100 dark:border-blue-900/30 mt-2">
-                                            <div className="py-4 flex justify-center">
-                                                {ex.gifUrl ? (
-                                                    <img src={ex.gifUrl} alt={ex.name} className="rounded-xl w-full max-w-[280px] object-cover bg-white" loading="lazy" />
-                                                ) : (
-                                                    <div className="w-full max-w-[280px] aspect-video rounded-2xl bg-gray-200 dark:bg-white/10 flex flex-col items-center justify-center text-gray-400 gap-2 border border-gray-300/50 dark:border-white/10">
-                                                        <Play size={24} className="opacity-50" />
-                                                        <span className="text-xs font-semibold">GIF no disponible</span>
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <button
-                                                onClick={() => handleSelect(ex)}
-                                                className="w-full py-3.5 rounded-2xl bg-blue-600 text-white font-bold text-[15px] hover:bg-blue-700 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-sm"
-                                            >
-                                                <Plus size={18} />
-                                                {actionLabel}
-                                            </button>
-                                        </div>
-                                    )}
+                                    <button
+                                        type="button"
+                                        aria-label={`${action} ${exercise.name}`}
+                                        className="min-h-11 shrink-0 rounded-lg px-2 text-sm font-semibold text-blue-700 hover:bg-blue-50 focus-visible:outline-2 focus-visible:outline-blue-500 dark:text-blue-400 dark:hover:bg-white/10"
+                                        onClick={() => chooseExercise(exercise)}
+                                    >
+                                        {action}
+                                    </button>
                                 </div>
-                            )
-                        })
-                    ) : (
-                        <div className="py-8 text-center px-4">
-                            <Dumbbell size={32} className="mx-auto text-gray-300 dark:text-gray-600 mb-3" />
-                            <p className="text-gray-900 dark:text-white font-semibold">No hemos encontrado "{search}"</p>
-                            <p className="text-sm text-gray-500 mt-1 mb-6">Puedes crearlo como ejercicio personalizado.</p>
-
-                            <Input
-                                placeholder="Ej: Curl Araña"
-                                value={customName}
-                                onChange={e => setCustomName(e.target.value)}
-                                onKeyDown={e => e.key === 'Enter' && handleAddCustom()}
-                            />
-                            <button
-                                onClick={handleAddCustom}
-                                disabled={!customName.trim()}
-                                className="w-full mt-3 py-3.5 rounded-2xl bg-gray-900 dark:bg-white text-white dark:text-black font-bold text-[15px] disabled:opacity-50 active:scale-95 transition-all"
-                            >
-                                Crear "{customName || '...'}"
-                            </button>
-                        </div>
+                                {expanded && (
+                                    <div className="py-2">
+                                        <ExerciseMedia
+                                            src={exercise.gifUrl}
+                                            alt={`Demostración de ${exercise.name}`}
+                                            className="mx-auto w-full max-w-[280px] rounded-xl bg-white object-cover"
+                                            fallback={<p className="text-sm text-gray-600 dark:text-gray-400">Demostración no disponible.</p>}
+                                        />
+                                    </div>
+                                )}
+                            </li>
+                        )
+                    })}
+                </ul>
+            ) : (
+                <div className="space-y-1 p-4">
+                    <p role="status" className="text-sm font-semibold">
+                        {search.trim() ? `No encontramos «${search.trim()}».` : 'No hay ejercicios para este grupo muscular.'}
+                    </p>
+                    {group && (
+                        <Button variant="ghost" type="button" className="min-h-11" onClick={() => setGroup(undefined)}>
+                            Quitar filtro
+                        </Button>
                     )}
                 </div>
-            </div>
+            )}
+        </>
+    )
+}
+
+export function ExerciseCatalogSheet({ open, onClose, onSelect, mode = 'add' }: ExerciseCatalogSheetProps) {
+    return (
+        <BottomSheet open={open} onClose={onClose} title={modes[mode].title} className="mx-auto h-[92dvh] max-w-lg" noPadding>
+            {open && <CatalogPicker mode={mode} onSelect={(name, group, catalogId) => {
+                onSelect(name, group, catalogId)
+                onClose()
+            }} />}
         </BottomSheet>
     )
 }

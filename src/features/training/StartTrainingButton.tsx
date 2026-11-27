@@ -7,7 +7,11 @@ import { useWorkoutContext } from '../../context/WorkoutContext'
 import type { WorkoutDay } from '../../types'
 import { useTraining } from './TrainingContext'
 
-export function StartTrainingButton({ day, followRotation = false }: { day: WorkoutDay | null; followRotation?: boolean }) {
+export function StartTrainingButton({ day, followRotation = false, inSummary = false }: {
+    day: WorkoutDay | null
+    followRotation?: boolean
+    inSummary?: boolean
+}) {
     const navigate = useNavigate()
     const { activeProgram, showToast } = useWorkoutContext()
     const { active, loading, error, rotationError, start } = useTraining()
@@ -37,10 +41,13 @@ export function StartTrainingButton({ day, followRotation = false }: { day: Work
     }
 
     if (!day && !active && !error && !rotationError) return null
+    const label = active
+        ? (inSummary ? 'Reanudar entrenamiento' : `Reanudar · ${active.dayName}`)
+        : (day?.exercises.length ? 'Empezar entrenamiento' : 'Configurar rutina')
     return (
         <div className="space-y-2">
-            <Button fullWidth size="lg" icon={<Play size={18} />} disabled={loading || starting || !!error || (!active && !!rotationError)} onClick={begin}>
-                {active ? `Reanudar · ${active.dayName}` : day?.exercises.length ? 'Empezar entrenamiento' : 'Configurar rutina'}
+            <Button fullWidth size="lg" icon={inSummary ? undefined : <Play size={18} />} disabled={loading || starting || !!error || (!active && !!rotationError)} onClick={begin}>
+                {label}
             </Button>
             {(error ?? rotationError) && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{error ?? rotationError}</p>}
         </div>
