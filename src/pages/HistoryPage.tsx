@@ -5,60 +5,19 @@ import { EmptyState } from '../components/ui/EmptyState'
 import { Badge } from '../components/ui/Badge'
 import { TrendingUp, BarChart2, ChevronRight, Dumbbell } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { getExerciseProgress, calcTotalVolume } from '../utils/helpers'
+import { getHistory, historyWindows, getHistorySessions } from '../utils/history'
+import { sessionDates } from '../utils/dates'
 import { ExerciseMiniChart } from '../components/ui/ExerciseMiniChart'
 
 export function HistoryPage() {
-    const { days } = useWorkoutContext()
+    const { programs, activeProgramId, allSessions } = useWorkoutContext()
     const navigate = useNavigate()
+    const [limit, setLimit] = useState<number>(Infinity)
+    const [programFilter, setProgramFilter] = useState('')
+    const [dayFilter, setDayFilter] = useState('')
+    const { routines, rows, totalExercises, totalWeeks, totalVolume } = getHistory(programs, programFilter, dayFilter, limit)
 
-    const [timeFilter, setTimeFilter] = useState<'semanal' | 'mensual' | 'trimestral' | 'general'>('general')
-    const [dayFilter, setDayFilter] = useState<string>('all')
-
-    const filteredDays = days.filter(day => dayFilter === 'all' || day.id === dayFilter)
-
-    // Estadísticas globales filtradas
-    const totalExercises = filteredDays.reduce((sum, d) => sum + d.exercises.length, 0)
-    const totalWeeks = filteredDays.reduce((sum, d) =>
-        sum + d.exercises.reduce((es, e) => es + e.weeks.length, 0), 0
-    )
-    const totalVolume = filteredDays.reduce((sum, d) =>
-        sum + d.exercises.reduce((es, e) =>
-            es + e.weeks.reduce((ws, w) => ws + calcTotalVolume(w.sets), 0), 0
-        ), 0
-    )
-
-    const filterLimit: Record<typeof timeFilter, number> = {
-        semanal: 1,
-        mensual: 4,
-        trimestral: 12,
-        general: Infinity
-    }
-
-    // Ejercicios con al menos 1 semana (para poder ver aunque sea el dato de la semana actual)
-    const exercisesWithProgress = filteredDays.flatMap(day =>
-        day.exercises
-            .filter(ex => ex.weeks.length >= 1)
-            .map(ex => {
-                const fullProgress = getExerciseProgress(ex)
-                const limit = filterLimit[timeFilter]
-                const progress = fullProgress.slice(-limit)
-                
-                const first = progress[0]
-                const last = progress.at(-1)!
-                
-                let delta = last.maxWeight - first.maxWeight
-                // Si es vista semanal, el progress solo tiene 1 punto, así que comparamos con el penúltimo del histórico global
-                if (timeFilter === 'semanal' && fullProgress.length >= 2) {
-                    delta = last.maxWeight - fullProgress[fullProgress.length - 2].maxWeight
-                }
-
-                return { day, ex, progress, delta, first, last }
-            })
-    )
-
-    const globalHasAnyData = days.some(d => d.exercises.some(e => e.weeks.length > 0))
-    const filteredHasAnyData = filteredDays.some(d => d.exercises.some(e => e.weeks.length > 0))
+    const weekSessions = sessionDates(getHistorySessions(allSessions, programs, programFilter, dayFilter), 'week')
 
     return (
         <div className="page-enter">
@@ -71,7 +30,10 @@ export function HistoryPage() {
             </div>
 
             <div className="px-5 pt-5 pb-4 max-w-lg mx-auto">
-                {!globalHasAnyData ? (
+                <p className="text-sm text-gray-500 mb-4">
+                    Esta semana · {weekSessions.length} {weekSessions.length === 1 ? 'entrenamiento' : 'entrenamientos'}
+                </p>
+                {!programs.length ? (
                     <EmptyState
                         icon={<TrendingUp size={28} />}
                         title="Sin datos aún"
@@ -79,10 +41,27 @@ export function HistoryPage() {
                     />
                 ) : (
                     <>
-                        {/* Stats globales (siempre visibles, incluso si es 0 por el filtro) */}
+                        <label className="block mb-4 text-sm">
+                            Programa
+                            <select
+                                className="block w-full mt-1 p-2 rounded-xl bg-gray-100 dark:bg-white/10"
+                                value={programFilter}
+                                onChange={event => {
+                                    setProgramFilter(event.target.value)
+                                    setDayFilter('')
+                                }}
+                            >
+                                <option value="">Todos los programas</option>
+                                {programs.map(program => (
+                                    <option key={program.id} value={program.id}>
+                                        {program.name}{program.isDeleted ? ' (eliminado)' : program.isArchived ? ' (archivado)' : ''}
+                                    </option>
+                                ))}
+                            </select>
+                        </label>
                         <div className="grid grid-cols-3 gap-3 mb-6">
                             <StatCard label="Ejercicios" value={String(totalExercises)} icon={<Dumbbell size={16} />} />
-                            <StatCard label="Semanas" value={String(totalWeeks)} icon={<BarChart2 size={16} />} />
+                            <StatCard label="Semanas por ejercicio" value={String(totalWeeks)} icon={<BarChart2 size={16} />} />
                             <StatCard
                                 label="Vol. total"
                                 value={totalVolume > 0 ? `${(totalVolume / 1000).toFixed(1)}t` : '—'}
@@ -94,106 +73,116 @@ export function HistoryPage() {
                         {/* Filtros de Rutina (Pills) NUNCA desaparecen */}
                         <div className="flex gap-2 overflow-x-auto pb-2 mb-4 scrollbar-hide -mx-5 px-5">
                             <button
-                                onClick={() => setDayFilter('all')}
+                                onClick={() => setDayFilter('')}
                                 className={`shrink-0 px-4 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
-                                    dayFilter === 'all' 
-                                        ? 'bg-gray-900 border-gray-900 text-white dark:bg-white dark:border-white dark:text-black' 
+                                    dayFilter === ''
+                                        ? 'bg-gray-900 border-gray-900 text-white dark:bg-white dark:border-white dark:text-black'
                                         : 'bg-white border-gray-200 text-gray-600 dark:bg-white/5 dark:border-white/10 dark:text-gray-300'
                                 }`}
                             >
                                 Todas
                             </button>
-                            {days.map(d => (
+                            {routines.map(({ day, program, id }) => (
                                 <button
-                                    key={d.id}
-                                    onClick={() => setDayFilter(d.id)}
+                                    key={id}
+                                    onClick={() => setDayFilter(id)}
                                     className={`shrink-0 px-4 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
-                                        dayFilter === d.id 
-                                            ? 'bg-gray-900 border-gray-900 text-white dark:bg-white dark:border-white dark:text-black' 
+                                        dayFilter === id
+                                            ? 'bg-gray-900 border-gray-900 text-white dark:bg-white dark:border-white dark:text-black'
                                             : 'bg-white border-gray-200 text-gray-600 dark:bg-white/5 dark:border-white/10 dark:text-gray-300'
                                     }`}
                                 >
-                                    {d.name}
+                                    {programFilter ? day.name : `${program.name} · ${day.name}`}{day.isDeleted ? ' (retirado)' : ''}
                                 </button>
                             ))}
                         </div>
 
-                        {!filteredHasAnyData ? (
+                        {rows.length === 0 ? (
                             <EmptyState
                                 icon={<TrendingUp size={28} />}
                                 title="Sin datos"
-                                description="Esta rutina aún no tiene series completadas."
+                                description="Selecciona otro programa o rutina para consultar sus registros."
                             />
                         ) : (
                             <>
 
-                        {/* Filtros de tiempo */}
-                        <div className="flex bg-gray-100 dark:bg-white/5 p-1 rounded-xl mb-4">
-                            {(['semanal', 'mensual', 'trimestral', 'general'] as const).map(f => (
-                                <button
-                                    key={f}
-                                    onClick={() => setTimeFilter(f)}
-                                    className={`flex-1 text-xs font-medium py-1.5 rounded-lg capitalize transition-all duration-200 ${
-                                        timeFilter === f 
-                                            ? 'bg-white dark:bg-white/10 text-gray-900 dark:text-white shadow-sm' 
-                                            : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
-                                    }`}
-                                >
-                                    {f === 'general' ? 'Todo' : f}
-                                </button>
-                            ))}
-                        </div>
+                            {/* Filtros de tiempo */}
+                            <div className="flex bg-gray-100 dark:bg-white/5 p-1 rounded-xl mb-4">
+                                {historyWindows.map(window => (
+                                    <button
+                                        key={window}
+                                        onClick={() => setLimit(window)}
+                                        className={`flex-1 text-xs font-medium py-1.5 rounded-lg capitalize transition-all duration-200 ${
+                                            limit === window
+                                                ? 'bg-white dark:bg-white/10 text-gray-900 dark:text-white shadow-sm'
+                                                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                                        }`}
+                                    >
+                                        {window === Infinity ? 'Todo' : `${window} últ.`}
+                                    </button>
+                                ))}
+                            </div>
 
-                        {/* Progresión por ejercicio */}
-                        {exercisesWithProgress.length > 0 ? (
+                            <p className="text-xs text-gray-500 mb-4">
+                                Últimas semanas registradas por ejercicio. Las series antiguas solo se pueden filtrar por número de semana.
+                            </p>
+
+                            {/* Progresión por ejercicio */}
                             <div className="space-y-4">
                                 <h2 className="text-xs font-semibold text-gray-500 dark:text-gray-600 uppercase tracking-widest">
                                     Evolución por ejercicio
                                 </h2>
-                                {exercisesWithProgress.map(({ day, ex, progress, delta, first, last }) => {
-                                    const deltaSign = delta > 0 ? '+' : ''
-
+                                {rows.map(({ program, day, ex, progress, delta, first, last, weeks }) => {
+                                    const canEdit = program.id === activeProgramId && !day.isDeleted && !ex.isDeleted
                                     return (
-                                        <button
-                                            key={ex.id}
-                                            className="w-full text-left bg-gray-50 dark:bg-white/5 border border-gray-200/80 dark:border-white/10 rounded-3xl px-5 py-4 hover:border-blue-500/30 dark:hover:border-blue-500/20 transition-all duration-200"
-                                            onClick={() => navigate(`/day/${day.id}/exercise/${ex.id}`)}
-                                        >
-                                            <div className="flex items-start justify-between gap-3 mb-3">
-                                                <div>
-                                                    <p className="font-semibold text-gray-900 dark:text-white">{ex.name}</p>
-                                                    <p className="text-xs text-gray-500 dark:text-gray-500 mt-0.5">{day.name}</p>
-                                                </div>
-                                                <div className="flex items-center gap-2 shrink-0">
-                                                    {delta !== 0 && (
-                                                        <Badge variant={delta > 0 ? 'green' : 'gray'}>
-                                                            {deltaSign}{delta} kg
-                                                        </Badge>
-                                                    )}
-                                                    <ChevronRight size={14} className="text-gray-400" />
-                                                </div>
-                                            </div>
-
-                                            {/* Gráfica de área suavizada */}
-                                            <div className="mt-4 mb-2">
-                                                <ExerciseMiniChart progress={progress} />
-                                            </div>
-
-                                            <div className="flex justify-between mt-2">
-                                                <span className="text-xs text-gray-500">{first.maxWeight} kg</span>
-                                                <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">
-                                                    {last.maxWeight} kg max
+                                        <article key={JSON.stringify([program.id, day.id, ex.id])} className="bg-gray-50 dark:bg-white/5 border border-gray-200/80 dark:border-white/10 rounded-3xl px-5 py-4">
+                                            <header>
+                                                <span className="font-semibold">{ex.name}</span>
+                                                {delta !== 0 && (
+                                                    <span className="ml-2"><Badge variant={delta > 0 ? 'green' : 'gray'}>{delta > 0 ? '+' : ''}{delta} kg</Badge></span>
+                                                )}
+                                                <span className="block text-xs text-gray-500 mt-1">
+                                                    {program.name} · {day.name}{ex.isDeleted ? ' · Retirado' : ''}
                                                 </span>
+                                            </header>
+                                            <div className="mt-4">
+                                                <ExerciseMiniChart progress={progress} />
+                                                <div className="flex justify-between mt-2 text-xs">
+                                                    <span>{first.maxWeight} kg</span>
+                                                    <span>{last.maxWeight} kg máx.</span>
+                                                </div>
                                             </div>
-                                        </button>
+                                            {canEdit ? (
+                                                <button className="flex gap-1 items-center text-sm text-blue-600 dark:text-blue-400 mt-3"
+                                                    onClick={() => navigate(`/day/${day.id}/exercise/${ex.id}`)}>
+                                                    Abrir ejercicio <ChevronRight size={14} />
+                                                </button>
+                                            ) : (
+                                                <details className="mt-3 text-sm">
+                                                    <summary className="cursor-pointer">Ver series</summary>
+                                                    <ul className="mt-2 space-y-2">
+                                                        {weeks.map(week => (
+                                                            <li key={week.id}>
+                                                                <strong>Semana {week.weekNumber}{week.label ? ` · ${week.label}` : ''}</strong>
+                                                                <ul className="text-xs mt-1">
+                                                                    {week.sets.map(set => (
+                                                                        <li key={set.id}>
+                                                                            {set.type === 'warmup' ? 'Calentamiento · ' : set.type === 'dropset' ? 'Descendente · ' : ''}
+                                                                            {set.weight ?? '—'} kg × {set.reps ?? '—'} reps · RIR {set.rir ?? '—'}
+                                                                            {set.notes ? ` · ${set.notes}` : ''}
+                                                                        </li>
+                                                                    ))}
+                                                                    {week.sets.length === 0 && <li>Sin series</li>}
+                                                                </ul>
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                </details>
+                                            )}
+                                        </article>
                                     )
                                 })}
                             </div>
-                        ) : (
-                            <div className="text-center py-10 text-gray-400 dark:text-gray-600 text-sm">
-                                Añade al menos 1 semana a un ejercicio para ver su historial
-                            </div>
-                        )}
                             </>
                         )}
                     </>

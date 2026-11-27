@@ -8,7 +8,7 @@ import { NumberInput } from '../components/ui/Input'
 import { EmptyState } from '../components/ui/EmptyState'
 import { ProgressBar } from '../components/ui/ProgressBar'
 import { ThemeToggle } from '../components/ui/ThemeToggle'
-import { calcTotalVolume, getCompletedSets, calc1RM } from '../utils/helpers'
+import { calcTotalVolume, getCompletedSets, getEstimated1RM } from '../utils/helpers'
 import { useTimer } from '../context/TimerContext'
 import type { LoggedSet, SetType } from '../types'
 
@@ -38,14 +38,10 @@ export function WeekPage() {
     }
 
     const completed = getCompletedSets(week.sets)
-    const effectiveCompletedSets = week.sets.filter(s => s.weight !== null && s.reps !== null && s.type !== 'warmup')
     const total = week.sets.length
     const progress = total > 0 ? (completed / total) * 100 : 0
     const volume = calcTotalVolume(week.sets)
-    
-    const maxWeight = effectiveCompletedSets.length > 0 ? Math.max(...effectiveCompletedSets.map(s => s.weight!)) : 0
-    const bestSet = effectiveCompletedSets.find(s => s.weight === maxWeight)
-    const estimated1RM = bestSet ? calc1RM(bestSet.weight!, bestSet.reps!) : 0
+    const estimated1RM = getEstimated1RM(week.sets)
 
     const handleAddSet = () => {
         addSet(day.id, exercise.id, week.id)
@@ -121,7 +117,7 @@ export function WeekPage() {
                             <div className="w-px bg-gray-200 dark:bg-white/10" />
                             <div>
                                 <p className="text-xl font-bold text-purple-600 dark:text-purple-400">{estimated1RM > 0 ? estimated1RM : '—'}</p>
-                                <p className="text-xs text-gray-500">1RM est.</p>
+                                <p className="text-xs text-gray-500" title="Fórmula de Epley para series efectivas de 1 a 10 repeticiones">1RM est.</p>
                             </div>
                         </div>
                         {progress === 100 && total > 0 && (

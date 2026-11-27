@@ -102,7 +102,7 @@ export function ExercisePage() {
             .sort((a, b) => b.weekNumber - a.weekNumber)[0]
         : null
     const prevMaxWeight = prevWeek
-        ? Math.max(...prevWeek.sets.filter(s => s.weight !== null).map(s => s.weight!), 0)
+        ? Math.max(...prevWeek.sets.filter(s => s.type !== 'warmup' && s.type !== 'dropset' && s.weight !== null).map(s => s.weight!), 0)
         : 0
 
     return (
@@ -371,10 +371,10 @@ export function ExercisePage() {
                         <Zap size={16} className="text-green-600 dark:text-green-400 mt-0.5 shrink-0" />
                         <div>
                             <p className="text-sm font-semibold text-green-800 dark:text-green-300">
-                                Semana anterior completada con RIR ≤ 1
+                                Series normales de la semana anterior completadas con RIR ≥ 2
                             </p>
                             <p className="text-xs text-green-700 dark:text-green-400 mt-0.5">
-                                Estabas cerca del fallo. Puedes subir el peso esta semana.
+                                Puedes probar un aumento en las series normales de esta semana.
                                 {prevMaxWeight > 0 && (
                                     <> Tu máximo fue <strong>{prevMaxWeight} kg</strong>.</>
                                 )}

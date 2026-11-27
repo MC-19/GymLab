@@ -1,8 +1,10 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
 import { useAudioBeep } from '../hooks/useAudioBeep'
 import { useLocalStorage } from '../hooks/useLocalStorage'
-import { useToast } from '../hooks/useToast'
+import { useWorkoutContext } from './WorkoutContext'
+import { adjustRestTimer, createRestTimer, remainingRest, type RestTimer } from '../utils/restTimer'
+import { reportStorageError } from '../services/storageErrors'
 
 export interface TimerState {
     isActive: boolean
@@ -20,111 +22,102 @@ interface TimerContextType extends TimerState {
 
 const TimerContext = createContext<TimerContextType | null>(null)
 
+function loadRestTimer(): RestTimer | null {
+    try {
+        const end = Number(sessionStorage.getItem('gymlab_timer_end'))
+        const duration = Number(sessionStorage.getItem('gymlab_timer_dur'))
+        return Number.isFinite(end) && end > 0 && Number.isFinite(duration) && duration > 0 ? { end, duration } : null
+    } catch {
+        return null
+    }
+}
+
+function persistRestTimer(timer: RestTimer | null) {
+    try {
+        if (timer) {
+            sessionStorage.setItem('gymlab_timer_end', String(timer.end))
+            sessionStorage.setItem('gymlab_timer_dur', String(timer.duration))
+        } else {
+            sessionStorage.removeItem('gymlab_timer_end')
+            sessionStorage.removeItem('gymlab_timer_dur')
+        }
+    } catch (error) {
+        reportStorageError(error)
+    }
+}
+
 export function TimerProvider({ children }: { children: ReactNode }) {
     const [defaultRestTime, setDefaultRestTime] = useLocalStorage<number>('gymlab_default_rest', 180)
-    const { showToast } = useToast()
+    const { showToast } = useWorkoutContext()
     const { playStartBeep, playFinishBeeps } = useAudioBeep()
+    const [timer, setTimer] = useState(loadRestTimer)
+    const currentTimer = useRef(timer)
+    const [timeRemaining, setTimeRemaining] = useState(() => timer ? remainingRest(timer, Date.now()) : 0)
+    const pendingToast = useRef(false)
 
-    const [isActive, setIsActive] = useState(false)
-    const [duration, setDuration] = useState(0)
-    const [timeRemaining, setTimeRemaining] = useState(0)
-    const [endTime, setEndTime] = useState<number | null>(null)
-    
-    // Load from memory if page reloads during active timer
     useEffect(() => {
-        const storedEnd = sessionStorage.getItem('gymlab_timer_end')
-        const storedDur = sessionStorage.getItem('gymlab_timer_dur')
+        if (!timer) return
 
-        if (storedEnd && storedDur) {
-            const end = Number(storedEnd)
-            const dur = Number(storedDur)
-            const remaining = Math.round((end - Date.now()) / 1000)
+        const tick = () => {
+            if (currentTimer.current !== timer) return
+            const remaining = remainingRest(timer, Date.now())
+            setTimeRemaining(remaining)
+            if (remaining > 0) return
+            currentTimer.current = null
+            persistRestTimer(null)
+            setTimer(null)
+            if (typeof navigator.vibrate === 'function') navigator.vibrate([200, 100, 200, 100, 500])
+            playFinishBeeps()
+            if (document.hidden) pendingToast.current = true
+            else showToast('¡Tiempo de descanso finalizado!', 'success')
+        }
+        const interval = window.setInterval(tick, 250)
+        const onVisible = () => {
+            if (!document.hidden) tick()
+        }
+        document.addEventListener('visibilitychange', onVisible)
+        return () => {
+            window.clearInterval(interval)
+            document.removeEventListener('visibilitychange', onVisible)
+        }
+    }, [timer, showToast, playFinishBeeps])
 
-            if (remaining > 0) {
-                // eslint-disable-next-line react-hooks/set-state-in-effect
-                setDuration(dur)
-                setEndTime(end)
-                setTimeRemaining(remaining)
-                setIsActive(true)
-            } else {
-                sessionStorage.removeItem('gymlab_timer_end')
-                sessionStorage.removeItem('gymlab_timer_dur')
+    useEffect(() => {
+        const showPending = () => {
+            if (!document.hidden && pendingToast.current) {
+                pendingToast.current = false
+                showToast('¡Tiempo de descanso finalizado!', 'success')
             }
         }
-    }, [])
+        document.addEventListener('visibilitychange', showPending)
+        return () => document.removeEventListener('visibilitychange', showPending)
+    }, [showToast])
 
-    useEffect(() => {
-        let interval: ReturnType<typeof setInterval>
-
-        if (isActive && endTime) {
-            interval = setInterval(() => {
-                const remaining = Math.round((endTime - Date.now()) / 1000)
-
-                if (remaining <= 0) {
-                    // Timer finished
-                    setIsActive(false)
-                    setTimeRemaining(0)
-                    setEndTime(null)
-                    sessionStorage.removeItem('gymlab_timer_end')
-                    sessionStorage.removeItem('gymlab_timer_dur')
-                    clearInterval(interval)
-
-                    // Feedback
-                    if ('vibrate' in navigator) {
-                        navigator.vibrate([200, 100, 200, 100, 500])
-                    }
-                    playFinishBeeps()
-
-                    showToast('¡Tiempo de descanso finalizado!', 'success')
-                } else {
-                    setTimeRemaining(remaining)
-                }
-            }, 1000)
-        }
-
-        return () => {
-            if (interval) clearInterval(interval)
-        }
-    }, [isActive, endTime, showToast, playFinishBeeps])
+    const updateTimer = (next: RestTimer | null, now: number) => {
+        currentTimer.current = next
+        setTimer(next)
+        setTimeRemaining(next ? remainingRest(next, now) : 0)
+        persistRestTimer(next)
+    }
 
     const startTimer = (seconds?: number) => {
+        const now = Date.now()
+        pendingToast.current = false
         playStartBeep()
-        const timeToSet = seconds ?? defaultRestTime
-        setDuration(timeToSet)
-        setTimeRemaining(timeToSet)
-        setIsActive(true)
-
-        const end = Date.now() + timeToSet * 1000
-        setEndTime(end)
-        sessionStorage.setItem('gymlab_timer_end', end.toString())
-        sessionStorage.setItem('gymlab_timer_dur', timeToSet.toString())
+        updateTimer(createRestTimer(seconds ?? defaultRestTime, now), now)
     }
 
-    const stopTimer = () => {
-        setIsActive(false)
-        setTimeRemaining(0)
-        setEndTime(null)
-        sessionStorage.removeItem('gymlab_timer_end')
-        sessionStorage.removeItem('gymlab_timer_dur')
-    }
+    const stopTimer = () => updateTimer(null, Date.now())
 
     const addTime = (seconds: number) => {
-        if (!isActive) return
-        setDuration(prev => prev + seconds)
-        setTimeRemaining(prev => prev + seconds)
-        setEndTime(prev => {
-            if (!prev) return null
-            const newEnd = prev + seconds * 1000
-            sessionStorage.setItem('gymlab_timer_end', newEnd.toString())
-            return newEnd
-        })
+        if (currentTimer.current) updateTimer(adjustRestTimer(currentTimer.current, seconds), Date.now())
     }
 
     return (
         <TimerContext.Provider value={{
-            isActive,
+            isActive: timer !== null,
             timeRemaining,
-            duration,
+            duration: timer?.duration ?? 0,
             defaultRestTime,
             setDefaultRestTime,
             startTimer,

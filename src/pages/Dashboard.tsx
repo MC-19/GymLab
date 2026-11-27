@@ -9,28 +9,7 @@ import { useWorkoutContext } from '../context/WorkoutContext'
 import { LATEST_VERSION } from '../data/changelog'
 import { calculateWeeklyStreak } from '../utils/helpers'
 
-// ── helpers ──────────────────────────────────────────────────────────────────
-
-function isSameDay(a: Date, b: Date) {
-    return a.getFullYear() === b.getFullYear()
-        && a.getMonth() === b.getMonth()
-        && a.getDate() === b.getDate()
-}
-
-function getWeekDays() {
-    const today = new Date()
-    const monday = new Date(today)
-    // Adjust to Monday of current week
-    const dayOfWeek = today.getDay()
-    const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek
-    monday.setDate(today.getDate() + diff)
-
-    return Array.from({ length: 7 }, (_, i) => {
-        const d = new Date(monday)
-        d.setDate(monday.getDate() + i)
-        return d
-    })
-}
+import { localDateKey, localMonday, sessionDates, shiftLocalDay } from '../utils/dates'
 
 const DAY_LABELS = ['L', 'M', 'X', 'J', 'V', 'S', 'D']
 
@@ -42,8 +21,8 @@ export function Dashboard() {
         days,
         getCurrentDay,
         currentDayIndex,
-        sessions,
-        getRecentSessions,
+        allSessions,
+        programs,
         setCurrentDayIndex,
         showToast,
         activeProgram,
@@ -65,7 +44,7 @@ export function Dashboard() {
 
     const DAY_LETTERS = ['A', 'B', 'C', 'D', 'E']
 
-    const handleOnboardingSelect = async (count: number, defaultRest: number) => {
+    const handleOnboardingSelect = (count: number, defaultRest: number) => {
         const dayNames = Array.from({ length: count }, (_, i) => `Día ${DAY_LETTERS[i]}`)
         createProgramWithDays('Mi programa', dayNames)
         setDefaultRestTime(defaultRest)
@@ -73,16 +52,15 @@ export function Dashboard() {
     }
 
     const currentDay = getCurrentDay(days)
-    const recentSessions = getRecentSessions(7)
-    const weekDays = getWeekDays()
     const today = new Date()
-    const weeklyCount = recentSessions.length
-    const streak = calculateWeeklyStreak(sessions)
+    const weekDays = Array.from({ length: 7 }, (_, index) => shiftLocalDay(localMonday(today), index))
+    const weekSessions = sessionDates(allSessions, 'week', today)
+    const weeklyCount = weekSessions.length
+    const streak = calculateWeeklyStreak(allSessions, today)
 
-    // Map each calendar day to a session (if any)
-    const sessionsByDay = weekDays.map(d => ({
-        date: d,
-        session: recentSessions.find(s => isSameDay(new Date(s.completedAt), d)) ?? null,
+    const sessionsByDay = weekDays.map(date => ({
+        date,
+        sessions: weekSessions.filter(session => localDateKey(new Date(session.completedAt)) === localDateKey(date)),
     }))
 
     // Next day in rotation
@@ -202,24 +180,24 @@ export function Dashboard() {
                                     </p>
                                 </div>
                                 <span className="text-xs font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/15 px-2.5 py-1 rounded-full">
-                                    {weeklyCount} / 7 entrenamientos
+                                    {weeklyCount} {weeklyCount === 1 ? 'entrenamiento' : 'entrenamientos'}
                                 </span>
                             </div>
                             <div className="bg-gray-50 dark:bg-white/5 border border-gray-200/60 dark:border-white/8 rounded-3xl px-4 py-4">
                                 <div className="grid grid-cols-7 gap-1">
-                                    {sessionsByDay.map(({ date, session }, i) => {
-                                        const isToday = isSameDay(date, today)
+                                    {sessionsByDay.map(({ date, sessions }, i) => {
+                                        const isToday = localDateKey(date) === localDateKey(today)
                                         const isFuture = date > today && !isToday
-                                        const isDone = !!session
-                                        const dayName = session
-                                            ? days.find(d => d.id === session.dayId)?.name
-                                            : null
+                                        const isDone = sessions.length > 0
+                                        const dayNames = sessions.map(session =>
+                                            session.dayName ?? programs.flatMap(program => program.days).find(day => day.id === session.dayId)?.name
+                                        ).filter(Boolean).join(', ')
 
                                         return (
                                             <div
                                                 key={i}
                                                 className="flex flex-col items-center gap-1.5"
-                                                title={dayName ?? undefined}
+                                                title={dayNames || undefined}
                                             >
                                                 <span className={[
                                                     'text-[10px] font-semibold uppercase',

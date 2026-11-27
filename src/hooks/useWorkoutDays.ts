@@ -27,7 +27,11 @@ export function useWorkoutDays(days: WorkoutDay[], setDays: SetDays) {
     const reorderDays = useCallback((orderedIds: string[]) => {
         setDays(previous => {
             const daysById = new Map(previous.map(day => [day.id, day]))
-            return orderedIds.map((id, order) => ({ ...daysById.get(id)!, order }))
+            const ids = [...new Set([...orderedIds, ...daysById.keys()])]
+            return ids.flatMap(id => {
+                const day = daysById.get(id)
+                return day ? [day] : []
+            }).map((day, order) => ({ ...day, order }))
         })
     }, [setDays])
 
@@ -36,7 +40,7 @@ export function useWorkoutDays(days: WorkoutDay[], setDays: SetDays) {
         if (!day) return undefined
 
         const copy = copyWorkoutDay(day)
-        setDays(previous => [...previous, copy])
+        setDays(previous => [...previous, { ...copy, order: previous.length }])
         return copy
     }, [days, setDays])
 
