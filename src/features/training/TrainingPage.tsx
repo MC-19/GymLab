@@ -185,7 +185,7 @@ export function TrainingPage() {
 
     return (
         <div key={active.id} className="mx-auto max-w-lg space-y-4 px-3.5 pb-8 sm:px-5">
-            <header className="training-status sticky top-0 z-30 -mx-3.5 space-y-1.5 border-b border-gray-200/80 bg-white/95 px-3.5 pb-2 pt-[env(safe-area-inset-top)] backdrop-blur-xl dark:border-white/10 dark:bg-black/95 sm:-mx-5 sm:px-5">
+            <header className="training-status sticky top-0 z-30 -mx-3.5 space-y-1.5 border-b border-gray-200/80 bg-white px-3.5 pb-2 pt-[env(safe-area-inset-top)] dark:border-white/10 dark:bg-black sm:-mx-5 sm:px-5">
                 <div className="flex min-w-0 items-center justify-between gap-2 pt-1">
                     <div className="min-w-0">
                         <p className="truncate text-xs font-medium text-gray-600 dark:text-gray-400">{active.programName}</p>
