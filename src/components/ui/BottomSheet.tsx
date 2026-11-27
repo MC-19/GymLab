@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, type ReactNode } from 'react'
+import { useEffect, useEffectEvent, useId, useRef, type ReactNode } from 'react'
 import { X } from 'lucide-react'
 import { IconButton } from './IconButton'
 import { useKeyboardHeight } from '../../hooks/useKeyboardHeight'
@@ -12,25 +12,50 @@ interface BottomSheetProps {
     children: ReactNode
 }
 
+let openSheets = 0
+let originalBodyOverflow = ''
+
 export function BottomSheet({ open, onClose, title, className = '', noPadding, children }: BottomSheetProps) {
     const keyboardHeight = useKeyboardHeight()
     const panelRef = useRef<HTMLDivElement>(null)
     const titleId = useId()
+    const closeFromKeyboard = useEffectEvent(onClose)
 
     useEffect(() => {
-        if (!open) return
+        const panel = panelRef.current
+        if (!open || !panel) return
         const previouslyFocused = document.activeElement as HTMLElement | null
-        const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+        const onKey = (event: KeyboardEvent) => {
+            if (event.key !== 'Escape' && event.key !== 'Tab') return
+            const dialogs = document.querySelectorAll('[role="dialog"][aria-modal="true"]')
+            if (dialogs.item(dialogs.length - 1) !== panel) return
+            if (event.key === 'Escape') {
+                closeFromKeyboard()
+                return
+            }
+            const focusable = Array.from(panel.querySelectorAll<HTMLElement>(
+                'button, input, select, textarea, a[href], summary, [tabindex]'
+            )).filter(element => element.tabIndex >= 0 && !element.matches(':disabled') && element.getClientRects().length)
+            const focused = document.activeElement
+            const edge = event.shiftKey ? focusable.at(0) : focusable.at(-1)
+            if (focused === panel || !panel.contains(focused) || focused === edge) {
+                event.preventDefault()
+                const target = (event.shiftKey ? focusable.at(-1) : focusable.at(0)) ?? panel
+                target.focus()
+            }
+        }
         document.addEventListener('keydown', onKey)
-        // Prevent background scroll
+        if (openSheets === 0) originalBodyOverflow = document.body.style.overflow
+        openSheets += 1
         document.body.style.overflow = 'hidden'
-        panelRef.current?.focus()
+        panel.focus()
         return () => {
             document.removeEventListener('keydown', onKey)
-            document.body.style.overflow = ''
-            previouslyFocused?.focus()
+            openSheets -= 1
+            if (openSheets === 0) document.body.style.overflow = originalBodyOverflow
+            previouslyFocused?.focus({ preventScroll: true })
         }
-    }, [open, onClose])
+    }, [open])
 
     if (!open) return null
 
@@ -62,7 +87,7 @@ export function BottomSheet({ open, onClose, title, className = '', noPadding, c
                 {title && (
                     <div className="flex items-center justify-between px-6 py-3 border-b border-gray-100 dark:border-white/10 shrink-0">
                         <h2 id={titleId} className="text-base font-semibold text-gray-900 dark:text-white">{title}</h2>
-                        <IconButton onClick={onClose} variant="ghost" size="sm" aria-label="Cerrar panel">
+                        <IconButton onClick={onClose} variant="ghost" aria-label="Cerrar panel" className="min-h-11 min-w-11 shrink-0">
                             <X size={16} />
                         </IconButton>
                     </div>

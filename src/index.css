@@ -153,3 +153,18 @@ body {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* On touch screens, leave the visual viewport to the series editor while typing. */
+@media (pointer: coarse) {
+    .training-shell:has([data-training-input]:focus) .training-status {
+        position: static;
+    }
+
+    .training-shell:has([data-training-input]:focus) .training-timer-actions {
+        visibility: hidden;
+    }
+
+    .training-shell:has([data-training-input]:focus) .training-bottom-nav {
+        display: none;
+    }
+}

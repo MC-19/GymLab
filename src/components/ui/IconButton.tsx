@@ -23,6 +23,7 @@ export function IconButton({ children, variant = 'ghost', size = 'md', className
         <button
             className={[
                 'inline-flex items-center justify-center transition-all duration-150 active:scale-90',
+                'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500',
                 variants[variant],
                 sizes[size],
                 className,

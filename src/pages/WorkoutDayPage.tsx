@@ -127,7 +127,7 @@ export function WorkoutDayPage() {
             {/* Header */}
             <div className="sticky top-0 z-30 bg-white/80 dark:bg-black/80 backdrop-blur-xl border-b border-gray-100/60 dark:border-white/8">
                 <div className="flex items-center gap-3 px-4 h-14 max-w-lg mx-auto">
-                    <IconButton onClick={() => navigate('/')} variant="ghost">
+                    <IconButton onClick={() => navigate('/')} variant="ghost" aria-label="Volver a Inicio">
                         <ChevronLeft size={22} />
                     </IconButton>
                     <div className="flex-1 min-w-0">
@@ -313,8 +313,7 @@ export function WorkoutDayPage() {
                 open={showAddSheet}
                 onClose={closeCatalog}
                 onSelect={handleSelectExercise}
-                title={replacementId ? 'Sustituir ejercicio' : 'Añadir ejercicio'}
-                actionLabel={replacementId ? 'Sustituir y conservar historial' : undefined}
+                mode={replacementId ? 'replace' : 'add'}
             />
 
             {goalExercise && <ExerciseGoalsEditor key={goalExercise.id} exercise={goalExercise}
@@ -391,8 +390,7 @@ export function WorkoutDayPage() {
                 open={showLinkSheet} 
                 onClose={() => setShowLinkSheet(false)} 
                 onSelect={handleLinkCatalog} 
-                title="Vincular Ejercicio"
-                actionLabel="Vincular con mi ejercicio"
+                mode="link"
             />
         </div>
     )

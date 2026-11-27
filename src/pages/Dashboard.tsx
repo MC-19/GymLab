@@ -1,7 +1,9 @@
 import { Bell, CalendarDays, ChevronRight, ListChecks, Shuffle } from 'lucide-react'
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { StartTrainingButton } from '../features/training/StartTrainingButton'
+import { useTraining } from '../features/training/TrainingContext'
+import { BottomSheet } from '../components/ui/BottomSheet'
 import { OnboardingCard } from '../components/ui/OnboardingCard'
 import { ThemeToggle } from '../components/ui/ThemeToggle'
 import { WhatsNewModal } from '../components/ui/WhatsNewModal'
@@ -29,9 +31,11 @@ export function Dashboard() {
         activeProgram,
         createProgramWithDays,
     } = useWorkoutContext()
+    const { active: activeTraining } = useTraining()
     const { setDefaultRestTime } = useTimer()
 
     const [showDayPicker, setShowDayPicker] = useState(false)
+    const closeDayPicker = useCallback(() => setShowDayPicker(false), [])
     const [showChangelog, setShowChangelog] = useState(false)
     const [hasUnseenUpdates, setHasUnseenUpdates] = useState(
         () => localStorage.getItem('GYMLAB_LAST_VERSION_SEEN') !== LATEST_VERSION
@@ -53,6 +57,8 @@ export function Dashboard() {
     }
 
     const currentDay = getCurrentDay(days)
+    const trainingName = activeTraining?.dayName ?? currentDay?.name
+    const exerciseCount = activeTraining?.exercises.length ?? currentDay?.exercises.length ?? 0
     const today = new Date()
     const weekDays = Array.from({ length: 7 }, (_, index) => shiftLocalDay(localMonday(today), index))
     const weekSessions = sessionDates(allSessions, 'week', today)
@@ -64,16 +70,9 @@ export function Dashboard() {
         sessions: weekSessions.filter(session => localDateKey(new Date(session.completedAt)) === localDateKey(date)),
     }))
 
-    // Next day in rotation
-    const nextIndex = days.length > 0 ? (currentDayIndex + 1) % days.length : 0
-    const nextDay = days.length > 1 ? days[nextIndex] : null
-
-    // Next days preview (after the next one)
-    const nextDays = days.length > 0
-        ? Array.from({ length: Math.min(2, days.length - 1) }, (_, i) =>
-            days[(currentDayIndex + i + 2) % days.length]
-        )
-        : []
+    const nextDays = Array.from({ length: Math.min(3, Math.max(0, days.length - 1)) }, (_, index) =>
+        days[(currentDayIndex + index + 1) % days.length]
+    )
 
     return (
         <div className="page-enter">
@@ -82,10 +81,10 @@ export function Dashboard() {
                 <div className="flex items-center justify-between px-5 h-14 max-w-lg mx-auto">
                     <img src="/icons/icon-512.png" alt="GymLab" className="h-30 w-auto object-contain" />
                     <div className="flex items-center gap-2">
-                        <button 
+                        <button
                             onClick={handleOpenChangelog}
                             aria-label={hasUnseenUpdates ? 'Ver novedades sin leer' : 'Ver novedades'}
-                            className="relative w-10 h-10 rounded-full bg-gray-100 dark:bg-white/10 flex items-center justify-center text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/20 transition-colors"
+                            className="relative size-11 rounded-full bg-gray-100 dark:bg-white/10 flex items-center justify-center text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/20 transition-colors focus-visible:outline-2 focus-visible:outline-blue-500"
                         >
                             <Bell size={18} />
                             {hasUnseenUpdates && (
@@ -99,7 +98,37 @@ export function Dashboard() {
 
             <div className="px-5 pt-6 pb-24 max-w-lg mx-auto space-y-5">
 
-                <StartTrainingButton day={currentDay} followRotation />
+                {trainingName !== undefined ? (
+                    <section className="space-y-3 rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-white/10 dark:bg-white/5" aria-labelledby="today-training">
+                        <div>
+                            <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                                {activeTraining ? 'Entrenamiento en curso' : 'Hoy toca'}
+                            </p>
+                            <h1 id="today-training" className="mt-1 wrap-break-word text-2xl font-bold">{trainingName}</h1>
+                            <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                                {exerciseCount ? `${exerciseCount} ${exerciseCount === 1 ? 'ejercicio' : 'ejercicios'}` : 'Sin ejercicios configurados'}
+                            </p>
+                        </div>
+                        <StartTrainingButton day={currentDay} followRotation inSummary />
+                        {currentDay && (
+                            <div className="flex flex-wrap items-center gap-x-4">
+                                {!!currentDay.exercises.length && (
+                                    <Link to={`/day/${currentDay.id}`} className="inline-flex min-h-11 items-center rounded-md text-sm font-medium text-blue-700 dark:text-blue-400 focus-visible:outline-2 focus-visible:outline-blue-500">
+                                        {activeTraining ? 'Ver rutina de hoy' : 'Ver ejercicios'}
+                                    </Link>
+                                )}
+                                <button
+                                    type="button"
+                                    onClick={() => setShowDayPicker(true)}
+                                    className="inline-flex min-h-11 items-center gap-1.5 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 focus-visible:outline-2 focus-visible:outline-blue-500"
+                                >
+                                    <Shuffle size={15} aria-hidden="true" />
+                                    Cambiar día
+                                </button>
+                            </div>
+                        )}
+                    </section>
+                ) : <StartTrainingButton day={null} followRotation />}
 
                 {/* ── EMPTY: Onboarding ────────────────────────────── */}
                 {days.length === 0 ? (
@@ -111,79 +140,12 @@ export function Dashboard() {
                     </>
                 ) : (
                     <>
-                        {/* Streak Banner */}
-                        {streak > 0 && (
-                            <div className="flex items-center justify-between bg-orange-50 dark:bg-orange-500/10 border border-orange-200/60 dark:border-orange-500/20 px-4 py-3.5 rounded-3xl -mt-2">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-9 h-9 rounded-full bg-orange-100 dark:bg-orange-500/20 flex items-center justify-center shrink-0">
-                                        <span className="text-lg leading-none">🔥</span>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm font-bold text-orange-800 dark:text-orange-400">
-                                            {streak} semana{streak > 1 ? 's' : ''} en racha
-                                        </p>
-                                        <p className="text-[11px] text-orange-600/80 dark:text-orange-400/80 font-medium tracking-wide">
-                                            ¡No rompas la cadena!
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* TODAY card */}
-                        <div>
-                            <button
-                                onClick={() => navigate(`/day/${currentDay!.id}`)}
-                                className="relative w-full text-left bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 dark:from-blue-500 dark:via-blue-600 dark:to-indigo-700 rounded-[2rem] p-6 hover:scale-[1.02] active:scale-[0.98] transition-transform duration-300 overflow-hidden group border border-white/10"
-                            >
-
-
-                                <div className="relative flex items-start justify-between gap-3 z-10">
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-xs font-bold text-blue-200/90 uppercase tracking-[0.2em] mb-1">
-                                            HOY TOCA
-                                        </p>
-                                        <h2 className="font-display text-3xl font-extrabold text-white truncate mb-2 tracking-tight group-hover:text-blue-50 transition-colors">
-                                            {currentDay!.name}
-                                        </h2>
-                                        {currentDay!.exercises.length > 0 ? (
-                                            <p className="text-blue-200 text-sm leading-relaxed">
-                                                {currentDay!.exercises.slice(0, 3).map(e => e.name).join(' · ')}
-                                                {currentDay!.exercises.length > 3 && ` +${currentDay!.exercises.length - 3} más`}
-                                            </p>
-                                        ) : (
-                                            <p className="text-blue-300/70 text-sm italic">Sin ejercicios configurados</p>
-                                        )}
-                                        {nextDay && (
-                                            <div className="mt-3 pt-3 border-t border-blue-500/40">
-                                                <p className="text-[11px] font-medium text-blue-200/90">
-                                                    <span className="font-bold opacity-70 tracking-wider">SIGUIENTE:</span> {nextDay.name}
-                                                </p>
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-md border border-white/10 flex items-center justify-center shrink-0 mt-2 group-hover:bg-white/20 transition-colors">
-                                        <ChevronRight size={22} className="text-white" />
-                                    </div>
-                                </div>
-                            </button>
-
-                            {/* Cambiar día */}
-                            <button
-                                onClick={() => setShowDayPicker(true)}
-                                className="mt-2 w-full flex items-center justify-center gap-1.5 py-2.5 rounded-2xl text-xs font-medium text-gray-500 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-all duration-150"
-                            >
-                                <Shuffle size={13} />
-                                Cambiar el día de hoy
-                            </button>
-                        </div>
-
                         {/* ── Weekly Calendar ─────────────────────────────── */}
                         <div>
                             <div className="flex items-center justify-between mb-3">
                                 <div className="flex items-center gap-2">
                                     <CalendarDays size={14} className="text-gray-400" />
-                                    <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-600">
+                                    <p className="text-xs font-semibold uppercase tracking-widest text-gray-600 dark:text-gray-400">
                                         Esta semana
                                     </p>
                                 </div>
@@ -211,7 +173,7 @@ export function Dashboard() {
                                                     'text-[10px] font-semibold uppercase',
                                                     isToday
                                                         ? 'text-blue-600 dark:text-blue-400'
-                                                        : 'text-gray-400 dark:text-gray-600',
+                                                        : 'text-gray-600 dark:text-gray-400',
                                                 ].join(' ')}>
                                                     {DAY_LABELS[i]}
                                                 </span>
@@ -234,9 +196,7 @@ export function Dashboard() {
                                                             'text-xs font-bold',
                                                             isToday
                                                                 ? 'text-blue-600 dark:text-blue-400'
-                                                                : isFuture
-                                                                    ? 'text-gray-300 dark:text-white/15'
-                                                                    : 'text-gray-400 dark:text-gray-600',
+                                                                : 'text-gray-600 dark:text-gray-400',
                                                         ].join(' ')}>
                                                             {date.getDate()}
                                                         </span>
@@ -258,50 +218,43 @@ export function Dashboard() {
                                 </div>
 
                                 {/* Legend */}
-                                <div className="flex items-center gap-4 mt-4 pt-3 border-t border-gray-200/60 dark:border-white/8">
+                                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-4 pt-3 border-t border-gray-200/60 dark:border-white/8">
                                     <div className="flex items-center gap-1.5">
                                         <div className="w-3 h-3 rounded-md bg-blue-600" />
-                                        <span className="text-[10px] text-gray-500">Completado</span>
+                                        <span className="text-xs text-gray-600 dark:text-gray-400">Completado</span>
                                     </div>
                                     <div className="flex items-center gap-1.5">
                                         <div className="w-3 h-3 rounded-md bg-blue-100 dark:bg-blue-500/20 ring-1 ring-blue-500/60" />
-                                        <span className="text-[10px] text-gray-500">Hoy</span>
+                                        <span className="text-xs text-gray-600 dark:text-gray-400">Hoy</span>
                                     </div>
                                     <div className="flex items-center gap-1.5">
                                         <div className="w-3 h-3 rounded-md bg-gray-200/60 dark:bg-white/8" />
-                                        <span className="text-[10px] text-gray-500">Sin entreno</span>
+                                        <span className="text-xs text-gray-600 dark:text-gray-400">Sin entreno</span>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* ── Upcoming days (after SIGUIENTE) ──────────── */}
+                        {streak > 0 && (
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                                <strong className="font-semibold text-gray-900 dark:text-white">{streak}</strong>{' '}
+                                {streak === 1 ? 'semana' : 'semanas'} en racha
+                            </p>
+                        )}
+
                         {nextDays.length > 0 && (
-                            <div>
-                                <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-600 mb-2">
-                                    Próximos
-                                </p>
-                                <div className="space-y-2">
-                                    {nextDays.map((day, i) => (
-                                        <div
-                                            key={day.id}
-                                            className="flex items-center gap-3 px-4 py-3 bg-gray-50 dark:bg-white/5 border border-gray-200/60 dark:border-white/8 rounded-2xl"
-                                        >
-                                            <div className="w-7 h-7 rounded-xl bg-gray-200/80 dark:bg-white/10 flex items-center justify-center shrink-0">
-                                                <span className="text-xs font-bold text-gray-500 dark:text-gray-400">
-                                                    +{i + 2}
-                                                </span>
-                                            </div>
-                                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate flex-1">
-                                                {day.name}
-                                            </span>
-                                            <span className="text-xs text-gray-400 dark:text-gray-600 shrink-0">
-                                                {day.exercises.length} ej.
-                                            </span>
-                                        </div>
+                            <details className="rounded-2xl border border-gray-200 px-4 dark:border-white/10">
+                                <summary className="min-h-11 cursor-pointer py-3 text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    Siguiente: {nextDays[0].name}
+                                </summary>
+                                <ol className="space-y-2 pb-3 text-sm text-gray-600 dark:text-gray-400">
+                                    {nextDays.map(day => (
+                                        <li className="wrap-break-word" key={day.id}>
+                                            {day.name} · {day.exercises.length} {day.exercises.length === 1 ? 'ejercicio' : 'ejercicios'}
+                                        </li>
                                     ))}
-                                </div>
-                            </div>
+                                </ol>
+                            </details>
                         )}
 
                         {/* Active program chip */}
@@ -310,7 +263,7 @@ export function Dashboard() {
                                 onClick={() => navigate('/programs')}
                                 className="w-full flex items-center gap-3 px-4 py-3 bg-gray-50 dark:bg-white/5 border border-gray-200/60 dark:border-white/8 rounded-2xl hover:border-blue-500/30 dark:hover:border-blue-500/20 transition-all duration-200 text-left"
                             >
-                                <span className="text-xs font-semibold text-gray-500 dark:text-gray-500 uppercase tracking-widest flex-1">Programa activo</span>
+                                <span className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-widest flex-1">Programa activo</span>
                                 <span className="text-sm font-semibold text-blue-600 dark:text-blue-400 truncate max-w-[60%]">{activeProgram.name}</span>
                                 <ChevronRight size={14} className="text-gray-300 dark:text-gray-600 shrink-0" />
                             </button>
@@ -331,48 +284,35 @@ export function Dashboard() {
                 )}
             </div>
 
-            {/* Day picker sheet */}
-            {showDayPicker && (
-                <>
-                    <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={() => setShowDayPicker(false)} />
-                    <div className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-[#111] rounded-t-3xl border-t border-gray-200/60 dark:border-white/10 px-5 pt-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] max-w-lg mx-auto">
-                        <div className="w-10 h-1 rounded-full bg-gray-300 dark:bg-white/20 mx-auto mb-5" />
-                        <h2 className="text-base font-bold text-gray-900 dark:text-white mb-1">¿Qué entrenas hoy?</h2>
-                        <p className="text-xs text-gray-500 dark:text-gray-500 mb-4">La rotación continuará desde el día que elijas.</p>
-                        <div className="space-y-2">
-                            {days.map((day, i) => {
-                                const isSelected = i === currentDayIndex % days.length
-                                return (
-                                    <button
-                                        key={day.id}
-                                        onClick={() => {
-                                            setCurrentDayIndex(i)
-                                            showToast(`Hoy: ${day.name}`, 'success')
-                                            setShowDayPicker(false)
-                                        }}
-                                        className={[
-                                            'w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl border text-left transition-all',
-                                            isSelected
-                                                ? 'bg-blue-600 border-blue-600 text-white'
-                                                : 'bg-gray-50 dark:bg-white/5 border-gray-200/60 dark:border-white/10 hover:border-blue-500/40',
-                                        ].join(' ')}
-                                    >
-                                        <div className={`w-7 h-7 rounded-xl flex items-center justify-center text-xs font-bold shrink-0 ${isSelected ? 'bg-white/20 text-white' : 'bg-blue-500/15 text-blue-600 dark:text-blue-400'}`}>
-                                            {i + 1}
-                                        </div>
-                                        <span className={`font-medium text-sm ${isSelected ? 'text-white' : 'text-gray-900 dark:text-white'}`}>
-                                            {day.name}
-                                        </span>
-                                        {isSelected && (
-                                            <span className="ml-auto text-[10px] font-bold text-white/70 uppercase">Actual</span>
-                                        )}
-                                    </button>
-                                )
-                            })}
-                        </div>
-                    </div>
-                </>
-            )}
+            <BottomSheet open={showDayPicker} onClose={closeDayPicker} title="¿Qué entrenas hoy?" className="mx-auto max-w-lg">
+                <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">La rotación continuará desde el día que elijas.</p>
+                <div className="space-y-2">
+                    {days.map((day, i) => {
+                        const isSelected = i === currentDayIndex % days.length
+                        return (
+                            <button
+                                type="button"
+                                key={day.id}
+                                onClick={() => {
+                                    setCurrentDayIndex(i)
+                                    showToast(`Hoy: ${day.name}`, 'success')
+                                    closeDayPicker()
+                                }}
+                                className={[
+                                    'w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl border text-left transition-colors focus-visible:outline-2 focus-visible:outline-blue-500',
+                                    isSelected
+                                        ? 'bg-blue-600 border-blue-600 text-white'
+                                        : 'bg-gray-50 dark:bg-white/5 border-gray-200 dark:border-white/10 hover:border-blue-500/40',
+                                ].join(' ')}
+                            >
+                                <span className="shrink-0 text-sm font-semibold">{i + 1}</span>
+                                <span className="min-w-0 wrap-break-word text-sm font-medium">{day.name}</span>
+                                {isSelected && <span className="ml-auto shrink-0 text-xs font-medium">Actual</span>}
+                            </button>
+                        )
+                    })}
+                </div>
+            </BottomSheet>
 
             <WhatsNewModal open={showChangelog} onClose={() => setShowChangelog(false)} />
         </div>

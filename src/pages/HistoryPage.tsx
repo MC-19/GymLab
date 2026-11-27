@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { useWorkoutContext } from '../context/WorkoutContext'
-import { ThemeToggle } from '../components/ui/ThemeToggle'
+import { HistoryNavigation } from '../components/layout/HistoryNavigation'
 import { EmptyState } from '../components/ui/EmptyState'
 import { Badge } from '../components/ui/Badge'
 import { TrendingUp, BarChart2, ChevronRight, Dumbbell } from 'lucide-react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { getHistory, historyWindows, getHistorySessions } from '../utils/history'
 import { sessionDates } from '../utils/dates'
 import { ExerciseMiniChart } from '../components/ui/ExerciseMiniChart'
@@ -21,19 +21,10 @@ export function HistoryPage() {
 
     return (
         <div className="page-enter">
-            {/* Header */}
-            <div className="sticky top-0 z-30 bg-white/80 dark:bg-black/80 backdrop-blur-xl border-b border-gray-100/60 dark:border-white/8">
-                <div className="flex items-center justify-between px-5 h-14 max-w-lg mx-auto">
-                    <h1 className="text-base font-bold text-gray-900 dark:text-white">Progresión</h1>
-                    <ThemeToggle />
-                </div>
-            </div>
+            <HistoryNavigation view="progression" />
 
             <div className="px-5 pt-5 pb-4 max-w-lg mx-auto">
-                <Link to="/history/sessions" className="block mb-4 rounded-2xl bg-blue-50 dark:bg-blue-500/10 p-4 font-semibold text-blue-700 dark:text-blue-300">
-                    Historial de entrenamientos
-                </Link>
-                <p className="text-sm text-gray-500 mb-4">
+                <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">
                     Esta semana · {weekSessions.length} {weekSessions.length === 1 ? 'entrenamiento' : 'entrenamientos'}
                 </p>
                 {!programs.length ? (
@@ -132,7 +123,7 @@ export function HistoryPage() {
 
                             {/* Progresión por ejercicio */}
                             <div className="space-y-4">
-                                <h2 className="text-xs font-semibold text-gray-500 dark:text-gray-600 uppercase tracking-widest">
+                                <h2 className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-widest">
                                     Evolución por ejercicio
                                 </h2>
                                 {rows.map(({ program, day, ex, progress, delta, first, last, weeks }) => {
@@ -144,7 +135,7 @@ export function HistoryPage() {
                                                 {delta !== 0 && (
                                                     <span className="ml-2"><Badge variant={delta > 0 ? 'green' : 'gray'}>{delta > 0 ? '+' : ''}{delta} kg</Badge></span>
                                                 )}
-                                                <span className="block text-xs text-gray-500 mt-1">
+                                                <span className="mt-1 block text-xs text-gray-600 dark:text-gray-400">
                                                     {program.name} · {day.name}{ex.isDeleted ? ' · Retirado' : ''}
                                                 </span>
                                             </header>
@@ -205,7 +196,7 @@ function StatCard({
             </div>
             <div>
                 <p className="text-xl font-bold text-gray-900 dark:text-white">{value}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-600">{label}</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400">{label}</p>
             </div>
         </div>
     )

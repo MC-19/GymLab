@@ -1,6 +1,6 @@
 import { TrainingPage } from './features/training/TrainingPage'
 import { SessionHistoryPage } from './features/training/SessionHistoryPage'
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, useMatch } from 'react-router-dom'
 import { AppShell } from './components/layout/AppShell'
 import { Dashboard } from './pages/Dashboard'
 import { WorkoutDayPage } from './pages/WorkoutDayPage'
@@ -18,12 +18,13 @@ import { PrivacyPage } from './pages/PrivacyPage'
 import { StorageErrorNotifier } from './components/ui/StorageErrorNotifier'
 
 export default function App() {
+  const isTraining = useMatch('/training') !== null
   return (
-    <AppShell>
+    <AppShell training={isTraining}>
       <PwaReloadPrompt />
       <AnalyticsConsentBanner />
       <StorageErrorNotifier />
-      <TimerWidget />
+      {!isTraining && <TimerWidget />}
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/routines" element={<RoutinesPage />} />
@@ -32,9 +33,10 @@ export default function App() {
         <Route path="/day/:dayId/exercise/:exerciseId" element={<ExercisePage />} />
         <Route path="/day/:dayId/exercise/:exerciseId/week/:weekId" element={<WeekPage />} />
         <Route path="/training" element={<TrainingPage />} />
+        <Route path="/history" element={<SessionHistoryPage />} />
         <Route path="/history/sessions" element={<SessionHistoryPage />} />
         <Route path="/history/sessions/:sessionId" element={<SessionHistoryPage />} />
-        <Route path="/history" element={<HistoryPage />} />
+        <Route path="/history/progression" element={<HistoryPage />} />
         <Route path="/weight" element={<BodyWeightPage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
