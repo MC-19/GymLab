@@ -1,14 +1,11 @@
-# GymLab brand assets
+# GymLab — marca aprobada
+Los SVG de la marca se han reconstruido siguiendo las dos imágenes elegidas por el usuario: la letra G/C abierta con mancuerna y la palabra GymLab, con Gym en azul marino y Lab en azul; el icono PWA blanco sobre fondo azul degradado.
 
-The brand keeps the familiar GymLab name and blue, with a geometric C/G-shaped gym mark and dumbbell. Logo assets are standalone vector SVGs; PNG icons are raster exports.
+- gymlab-logo-light.svg: cabecera sobre fondo claro.
+- gymlab-logo-dark.svg: cabecera sobre fondo oscuro (Gym blanco).
+- gymlab-mark.svg y favicon.svg: G/C blanca con mancuerna y fondo azul.
+- gymlab-maskable.svg: icono con zona de seguridad para máscaras de Android.
+- icon-192.png, icon-512-square.png, icon-maskable-square.png y apple-touch-icon.png: exportaciones PWA/iOS.
 
-- `gymlab-logo-light.svg`: wordmark for light backgrounds.
-- `gymlab-logo-dark.svg`: wordmark for dark backgrounds.
-- `gymlab-mark.svg`: blue-background symbol; source for standard app icons.
-- `gymlab-maskable.svg`: symbol inset to fit adaptive icon safe areas.
-- `../icons/favicon.svg`: browser tab icon.
-- `../icons/icon-192.png`, `icon-512-square.png`: PWA icons.
-- `../icons/icon-maskable-square.png`: PWA maskable icon.
-- `../icons/apple-touch-icon.png`: iOS home-screen icon.
-
-Primary blue: `#1D4ED8`. Dark text: `#0E1522`. Dark-surface accent: `#60A5FA`. Keep adequate icon margins and avoid restoring the previous gaming-style header. This PR only changes brand assets and their references.
+Los trazados se han derivado de las imágenes originales; las curvas y los gradientes están reconstruidos y pueden diferir ligeramente del raster de referencia.
+No se ha cambiado la interfaz, la lógica de entrenamiento ni la persistencia.
