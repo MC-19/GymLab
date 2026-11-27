@@ -1,3 +1,4 @@
+import { isExerciseGoals } from '../features/programs/goals'
 import { validateSessions, type WorkoutSession } from '../features/training/session'
 import type { BodyWeightEntry, CompletedSession, LoggedSet, TrainingProgram, WorkoutDay, WorkoutState } from '../types'
 
@@ -30,7 +31,8 @@ function isLoggedSet(value: unknown): value is LoggedSet {
 }
 
 export function isWorkoutDay(value: unknown): value is WorkoutDay {
-    if (!isRecord(value) || !optionalBoolean(value.isDeleted) || typeof value.id !== 'string' || typeof value.name !== 'string'
+    if (!isRecord(value) || !optionalBoolean(value.isDeleted) || !optionalString(value.replacedByDayId)
+        || typeof value.id !== 'string' || typeof value.name !== 'string'
         || typeof value.createdAt !== 'string' || !Number.isFinite(value.order)
         || !Array.isArray(value.exercises)) return false
 
@@ -38,6 +40,7 @@ export function isWorkoutDay(value: unknown): value is WorkoutDay {
         isRecord(exercise) && typeof exercise.id === 'string' && typeof exercise.name === 'string'
         && optionalBoolean(exercise.isDeleted)
         && ['notes', 'muscleGroup', 'catalogId'].every(key => optionalString(exercise[key]))
+        && (exercise.goals === undefined || isExerciseGoals(exercise.goals))
         && Array.isArray(exercise.weeks)
         && exercise.weeks.every(week =>
             isRecord(week) && typeof week.id === 'string' && Number.isInteger(week.weekNumber)

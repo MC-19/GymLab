@@ -42,11 +42,13 @@ export function shouldSuggestWeightIncrease(week: TrainingWeek | undefined): boo
     const effective = week?.sets.filter(set => set.type !== 'warmup' && set.type !== 'dropset') ?? []
     if (!effective.length) return false
 
-    return effective.every(set =>
-        set.weight !== null && Number.isFinite(set.weight) && set.weight > 0
-        && set.reps !== null && Number.isInteger(set.reps) && set.reps > 0
-        && set.rir !== null && Number.isFinite(set.rir) && set.rir >= 2 && set.rir <= 10
-    )
+    return effective.every(set => meetsProgressionTarget(set, 1, 2))
+}
+
+export function meetsProgressionTarget(set: Pick<LoggedSet, 'weight' | 'reps' | 'rir'>, minReps: number, targetRir: number): boolean {
+    return set.weight !== null && Number.isFinite(set.weight) && set.weight > 0
+        && set.reps !== null && Number.isInteger(set.reps) && set.reps >= minReps
+        && set.rir !== null && Number.isFinite(set.rir) && set.rir >= targetRir && set.rir <= 10
 }
 
 /** Only advance prepared working sets, without touching anything already logged. */
@@ -103,26 +105,29 @@ export function getRelativeDate(iso: string): string {
     return formatDate(iso)
 }
 
+export function copyExercisePlan(exercise: Exercise): Exercise {
+    const latest = getLatestTrainingWeek(exercise)
+    return {
+        ...exercise,
+        id: generateId(),
+        goals: exercise.goals && { ...exercise.goals },
+        weeks: latest?.sets.length ? [{
+            id: generateId(),
+            weekNumber: 1,
+            sets: latest.sets.map(set => ({
+                id: generateId(), type: set.type, weight: null, reps: null, rir: null,
+            })),
+        }] : [],
+    }
+}
+
 export function copyWorkoutDay(day: WorkoutDay): WorkoutDay {
     return {
         id: generateId(),
         name: day.name,
         order: day.order,
         createdAt: new Date().toISOString(),
-        exercises: day.exercises.filter(exercise => !exercise.isDeleted).map(exercise => {
-            const latest = getLatestTrainingWeek(exercise)
-            return {
-                ...exercise,
-                id: generateId(),
-                weeks: latest?.sets.length ? [{
-                    id: generateId(),
-                    weekNumber: 1,
-                    sets: latest.sets.map(set => ({
-                        id: generateId(), type: set.type, weight: null, reps: null, rir: null,
-                    })),
-                }] : [],
-            }
-        }),
+        exercises: day.exercises.filter(exercise => !exercise.isDeleted).map(copyExercisePlan),
     }
 }
 

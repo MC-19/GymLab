@@ -35,6 +35,15 @@ export interface TrainingWeek {
     sets: LoggedSet[]
 }
 
+export interface ExerciseGoals {
+    sets: number
+    minReps: number
+    maxReps: number
+    targetRir: number
+    restSeconds: number
+    incrementKg: number
+}
+
 export interface Exercise {
     isDeleted?: boolean
     id: string
@@ -42,11 +51,13 @@ export interface Exercise {
     muscleGroup?: MuscleGroup | string
     notes?: string
     catalogId?: string      // ID to link to official catalog media
+    goals?: ExerciseGoals
     weeks: TrainingWeek[]   // Historial de semanas de este ejercicio
 }
 
 export interface WorkoutDay {
     isDeleted?: boolean
+    replacedByDayId?: string
     id: string
     name: string
     exercises: Exercise[]

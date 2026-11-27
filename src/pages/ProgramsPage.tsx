@@ -1,6 +1,7 @@
+import { PROGRAM_TEMPLATES, buildTemplateDays } from '../features/programs/templates'
 import { getActiveDays } from '../hooks/usePrograms'
 import { Archive, CheckCircle2, ChevronRight, Dumbbell, FolderOpen, Pencil, Plus, Trash2 } from 'lucide-react'
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '../components/ui/Button'
 import { EmptyState } from '../components/ui/EmptyState'
@@ -23,6 +24,8 @@ export function ProgramsPage() {
 
     const [showCreateModal, setShowCreateModal] = useState(false)
     const [newName, setNewName] = useState('')
+    const [templateId, setTemplateId] = useState('')
+    const template = PROGRAM_TEMPLATES.find(item => item.id === templateId)
     const [renameTarget, setRenameTarget] = useState<{ id: string; name: string } | null>(null)
     const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
     const [archiveTarget, setArchiveTarget] = useState<string | null>(null)
@@ -31,12 +34,17 @@ export function ProgramsPage() {
     const activePrograms = programs.filter(p => !p.isArchived && !p.isDeleted)
     const archivedPrograms = programs.filter(p => p.isArchived && !p.isDeleted)
 
-    const handleCreate = () => {
-        const name = newName.trim()
-        if (!name) return
-        createProgram(name)
-        setNewName('')
+    const closeCreate = useCallback(() => {
         setShowCreateModal(false)
+        setNewName('')
+        setTemplateId('')
+    }, [])
+
+    const handleCreate = () => {
+        const name = newName.trim() || template?.name
+        if (!name) return
+        createProgram(name, template && buildTemplateDays(template))
+        closeCreate()
         navigate('/routines')
     }
 
@@ -237,20 +245,29 @@ export function ProgramsPage() {
             </div>
 
             {/* Create modal */}
-            <Modal open={showCreateModal} onClose={() => { setShowCreateModal(false); setNewName('') }} title="Nuevo programa">
+            <Modal open={showCreateModal} onClose={closeCreate} title="Nuevo programa">
                 <div className="space-y-4">
+                    <label className="block text-sm font-semibold">
+                        Plantilla
+                        <select value={templateId} onChange={event => setTemplateId(event.target.value)}
+                            className="mt-1 block w-full rounded-xl bg-gray-100 dark:bg-white/10 p-3 font-normal">
+                            <option value="">Programa vacío</option>
+                            {PROGRAM_TEMPLATES.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
+                        </select>
+                    </label>
+                    {template && <ul className="space-y-1 text-sm text-gray-500">
+                        {template.days.map(day => <li key={day.name}>{day.name} · {day.main.length + day.accessories.length} ejercicios</li>)}
+                    </ul>}
                     <Input
                         label="Nombre del programa"
-                        placeholder="ej: Fuerza Primavera, Hipertrofia Vol.2"
+                        placeholder={template?.name ?? "Ej. Fuerza primavera"}
                         value={newName}
                         onChange={e => setNewName(e.target.value)}
                         onKeyDown={e => { if (e.key === 'Enter') handleCreate() }}
                         autoFocus
                     />
-                    <p className="text-xs text-gray-500 dark:text-gray-500">
-                        Se creará un programa vacío y se activará. Podrás añadir días desde la pantalla de Rutinas.
-                    </p>
-                    <Button fullWidth size="lg" onClick={handleCreate} disabled={!newName.trim()}>
+
+                    <Button fullWidth size="lg" onClick={handleCreate} disabled={!newName.trim() && !template}>
                         Crear programa
                     </Button>
                 </div>

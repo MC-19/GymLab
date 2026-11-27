@@ -19,7 +19,7 @@ export function useWorkout(days: WorkoutDay[], setDays: SetDays) {
     )
 
     const dayOperations = useWorkoutDays(days, setDays)
-    const exerciseOperations = useWorkoutExercises(setDays, updateExerciseInDay)
+    const exerciseOperations = useWorkoutExercises(days, setDays, updateExerciseInDay)
     const weekOperations = useWorkoutWeeks(days, updateExerciseInDay)
     const setOperations = useWorkoutSets(updateExerciseInDay)
 

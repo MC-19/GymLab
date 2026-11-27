@@ -1,6 +1,7 @@
 import { Link, useParams } from 'react-router-dom'
 import { ChevronRight, Trophy } from 'lucide-react'
 import { useTraining } from './TrainingContext'
+import { goalLabel } from '../programs/goals'
 import { summarizeSession } from './session'
 
 function durationLabel(seconds: number): string {
@@ -37,6 +38,7 @@ export function SessionHistoryPage() {
                     {session.exercises.map(exercise => (
                         <section key={exercise.id} className="rounded-2xl border border-gray-200 dark:border-white/10 p-4 space-y-2">
                             <h2 className="font-semibold">{exercise.name}</h2>
+                            {exercise.goals && <p className="text-xs text-gray-500">Objetivo de la sesión · {goalLabel(exercise.goals)}</p>}
                             {session.records.includes(exercise.id) && (
                                 <p className="flex items-center gap-2 text-sm text-amber-700 dark:text-amber-400">
                                     <Trophy size={16} /> Récord de peso

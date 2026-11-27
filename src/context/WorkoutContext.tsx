@@ -16,7 +16,7 @@ interface WorkoutContextType {
     programs: TrainingProgram[]
     activeProgramId: string
     activeProgram: TrainingProgram | null
-    createProgram: (name: string) => TrainingProgram
+    createProgram: (name: string, days?: WorkoutDay[]) => TrainingProgram
     createProgramWithDays: (name: string, dayNames: string[]) => TrainingProgram
     updateProgram: (id: string, updates: Partial<Pick<TrainingProgram, 'name' | 'isArchived'>>) => void
     archiveProgram: (id: string) => void
@@ -28,11 +28,14 @@ interface WorkoutContextType {
     deleteDay: (dayId: string) => void
     reorderDays: (orderedIds: string[]) => void
     duplicateDay: (dayId: string) => WorkoutDay | undefined
+    replaceDay: (dayId: string, source: WorkoutDay) => WorkoutDay | undefined
     // Exercises
     addExercise: (dayId: string, name: string, muscleGroup?: string, catalogId?: string) => Exercise
     updateExercise: (dayId: string, exerciseId: string, updates: Partial<Exercise>) => void
     deleteExercise: (dayId: string, exerciseId: string) => void
     reorderExercises: (dayId: string, orderedIds: string[]) => void
+    duplicateExercise: (dayId: string, exerciseId: string) => void
+    replaceExercise: (dayId: string, exerciseId: string, name: string, muscleGroup?: string, catalogId?: string) => void
     // Weeks
     addWeek: (dayId: string, exerciseId: string) => TrainingWeek
     deleteWeek: (dayId: string, exerciseId: string, weekId: string) => void
@@ -69,6 +72,11 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
             deleteDay: id => {
                 rotation.removeDay(id)
                 workout.deleteDay(id)
+            },
+            replaceDay: (id, source) => {
+                const replacement = workout.replaceDay(id, source)
+                if (replacement) rotation.replaceDay(id, replacement)
+                return replacement
             },
             reorderDays: ids => {
                 rotation.anchorRotation()
