@@ -9,13 +9,13 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'prompt',
-      includeAssets: ['icons/icon-192.png', 'icons/icon-512-square.png', 'icons/icon-maskable-square.png'],
+      includeAssets: ['icons/icon-192.png', 'icons/icon-512-square.png', 'icons/icon-maskable-square.png', 'icons/apple-touch-icon.png', 'icons/favicon.svg'],
       manifest: {
         id: '/',
         name: 'GymLab',
         short_name: 'GymLab',
         description: 'Tu tracker de entrenamiento personal',
-        theme_color: '#2563eb',
+        theme_color: '#1D4ED8',
         background_color: '#000000',
         display: 'standalone',
         orientation: 'portrait',
