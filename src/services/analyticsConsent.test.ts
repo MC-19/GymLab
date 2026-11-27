@@ -8,7 +8,11 @@ describe('analytics consent', () => {
     })
 
     it('recognizes accepted and rejected choices', () => {
-        expect(parseAnalyticsConsent('accepted')).toBe('accepted')
+        expect(parseAnalyticsConsent('accepted-v2')).toBe('accepted')
         expect(parseAnalyticsConsent('rejected')).toBe('rejected')
+    })
+
+    it('asks again before applying an old acceptance to another analytics provider', () => {
+        expect(parseAnalyticsConsent('accepted')).toBe('pending')
     })
 })
