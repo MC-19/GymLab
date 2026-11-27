@@ -1,5 +1,5 @@
 import { ChevronRight, Dumbbell, Play, Plus, Search, X } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { EXERCISE_CATALOG } from '../../data/exerciseCatalog'
 import type { CatalogExercise, MuscleGroup } from '../../types'
 import { BottomSheet } from '../ui/BottomSheet'
@@ -40,16 +40,15 @@ export function ExerciseCatalogSheet({ open, onClose, onSelect, title = "Añadir
     const [expandedId, setExpandedId] = useState<string | null>(null)
     const [customName, setCustomName] = useState('')
 
-    // Reset state when opening/closing
-    useMemo(() => {
-        if (!open) {
-            setTimeout(() => {
-                setSearch('')
-                setFilterGroup('Todos')
-                setExpandedId(null)
-                setCustomName('')
-            }, 300)
-        }
+    useEffect(() => {
+        if (open) return
+        const timer = window.setTimeout(() => {
+            setSearch('')
+            setFilterGroup('Todos')
+            setExpandedId(null)
+            setCustomName('')
+        }, 300)
+        return () => window.clearTimeout(timer)
     }, [open])
 
     const filteredExercises = useMemo(() => {

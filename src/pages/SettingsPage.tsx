@@ -6,8 +6,9 @@ import { useTimer } from '../context/TimerContext'
 import { Button } from '../components/ui/Button'
 import { Modal } from '../components/ui/Modal'
 import type { ThemeMode } from '../types'
-import { getGymLabStorageKeys, parseBackup } from '../utils/backup'
+import { backupToStorage, parseBackup, readGymLabStorage, replaceGymLabStorage } from '../utils/backup'
 import { useAnalyticsConsent } from '../hooks/useAnalyticsConsent'
+import { generateId } from '../utils/helpers'
 import { Link } from 'react-router-dom'
 
 const themeOptions: { value: ThemeMode; label: string; icon: React.ReactNode }[] = [
@@ -19,12 +20,13 @@ const themeOptions: { value: ThemeMode; label: string; icon: React.ReactNode }[]
 export function SettingsPage() {
     const { theme, setTheme } = useTheme()
     const { days, showToast } = useWorkoutContext()
-    const { defaultRestTime, setDefaultRestTime } = useTimer()
+    const { defaultRestTime, setDefaultRestTime, stopTimer } = useTimer()
     const { consent, acceptAnalytics, rejectAnalytics } = useAnalyticsConsent()
     const [showClearModal, setShowClearModal] = useState(false)
     const [showImportModal, setShowImportModal] = useState(false)
-    const [importedData, setImportedData] = useState<string | null>(null)
-    const [importFileName, setImportFileName] = useState('')
+    const [selectedBackup, setSelectedBackup] = useState<{ raw: string; name: string } | null>(null)
+    const [backupRequested, setBackupRequested] = useState(false)
+    const importReaderRef = useRef<FileReader | null>(null)
     const fileInputRef = useRef<HTMLInputElement>(null)
 
     const totalExercises = days.reduce((sum, d) => sum + d.exercises.length, 0)
@@ -33,109 +35,89 @@ export function SettingsPage() {
 
     // ── Exportar ──────────────────────────────────────────────────────────────
     const handleExport = () => {
-        const exportedData: Record<string, string> = {}
-        for (const key of getGymLabStorageKeys(localStorage)) {
-            exportedData[key] = localStorage.getItem(key) || ''
+        try {
+            const backup = {
+                version: 2,
+                exportedAt: new Date().toISOString(),
+                days,
+                localStorage: readGymLabStorage(localStorage),
+            }
+            const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' })
+            const url = URL.createObjectURL(blob)
+            const link = document.createElement('a')
+            link.href = url
+            link.download = `gymlab-backup-${backup.exportedAt.slice(0, 10)}.json`
+            link.click()
+            URL.revokeObjectURL(url)
+            showToast('Descarga del backup iniciada', 'success')
+            return true
+        } catch {
+            showToast('No se ha podido descargar el backup.', 'error')
+            return false
         }
-
-        const backup = {
-            version: 2,
-            exportedAt: new Date().toISOString(),
-            // Legacy field para mantener retrocompatibilidad o lectura de V1
-            days,
-            localStorage: exportedData
-        }
-        const json = JSON.stringify(backup, null, 2)
-        const blob = new Blob([json], { type: 'application/json' })
-        const url = URL.createObjectURL(blob)
-
-        const today = new Date().toISOString().slice(0, 10)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `gymlab-backup-${today}.json`
-        a.click()
-        URL.revokeObjectURL(url)
-
-        showToast('Backup exportado correctamente', 'success')
     }
 
     // ── Importar ──────────────────────────────────────────────────────────────
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
         if (!file) return
+        e.target.value = ''
+        importReaderRef.current?.abort()
+        importReaderRef.current = null
+        setSelectedBackup(null)
+        setShowImportModal(false)
+        setBackupRequested(false)
+
         if (!file.name.endsWith('.json')) {
             showToast('El archivo debe ser un .json de GymLab', 'error')
             return
         }
-        if (file.size > 5 * 1024 * 1024) {
-            showToast('El backup supera el límite de 5 MB', 'error')
-            return
-        }
-        setImportFileName(file.name)
         const reader = new FileReader()
-        reader.onload = ev => {
+        importReaderRef.current = reader
+        reader.onload = () => {
+            if (importReaderRef.current !== reader) return
             try {
-                const raw = ev.target?.result as string
-                // Validación básica: debe tener version y days
+                const raw = reader.result
+                if (typeof raw !== 'string') throw new Error('No se ha podido leer el archivo')
                 parseBackup(raw)
-                setImportedData(raw)
+                setSelectedBackup({ raw, name: file.name })
                 setShowImportModal(true)
             } catch (error) {
                 showToast(error instanceof Error ? error.message : 'Error al leer el archivo', 'error')
             }
         }
+        reader.onerror = () => {
+            if (importReaderRef.current === reader) showToast('No se ha podido leer el archivo', 'error')
+        }
         reader.readAsText(file)
-        // Reset input para poder seleccionar el mismo archivo otra vez
-        e.target.value = ''
     }
 
     const handleConfirmImport = () => {
-        if (!importedData) return
+        if (!selectedBackup || !backupRequested) return
         try {
-            const parsed = parseBackup(importedData)
-            let restoredData: Record<string, string>
-
-            if (parsed.version === 2) {
-                restoredData = parsed.localStorage ?? {}
-            } else {
-                // V1 migration handling
-                const defaultProgram = {
-                    id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
-                    name: 'Backup Importado',
-                    createdAt: new Date().toISOString(),
-                    isArchived: false,
-                    days: parsed.days,
-                }
-                restoredData = {
-                    gymlab_programs: JSON.stringify([defaultProgram]),
-                    gymlab_active_program_id: JSON.stringify(defaultProgram.id),
-                }
-            }
-
-            const existingData = Object.fromEntries(
-                getGymLabStorageKeys(localStorage).map(key => [key, localStorage.getItem(key) ?? ''])
-            )
-
-            try {
-                getGymLabStorageKeys(localStorage).forEach(key => localStorage.removeItem(key))
-                Object.entries(restoredData).forEach(([key, value]) => localStorage.setItem(key, value))
-            } catch (error) {
-                getGymLabStorageKeys(localStorage).forEach(key => localStorage.removeItem(key))
-                Object.entries(existingData).forEach(([key, value]) => localStorage.setItem(key, value))
-                throw error
-            }
-
-            showToast('Datos restaurados. Recargando…', 'success')
-            setTimeout(() => window.location.reload(), 800)
-        } catch {
-            showToast('Error al importar los datos', 'error')
+            const backup = parseBackup(selectedBackup.raw)
+            replaceGymLabStorage(localStorage, backupToStorage(backup, generateId(), new Date().toISOString()))
+            stopTimer()
+            window.location.reload()
+        } catch (error) {
+            showToast(error instanceof Error ? error.message : 'Error al importar los datos', 'error')
         }
         setShowImportModal(false)
     }
 
     const handleClearData = () => {
-        getGymLabStorageKeys(localStorage).forEach(key => localStorage.removeItem(key))
-        window.location.reload()
+        if (!backupRequested) return
+        try {
+            replaceGymLabStorage(localStorage, {})
+            stopTimer()
+            window.location.reload()
+        } catch (error) {
+            showToast(error instanceof Error ? error.message : 'Error al eliminar los datos', 'error')
+        }
+    }
+
+    const handleSafetyExport = () => {
+        setBackupRequested(handleExport())
     }
 
     return (
@@ -362,7 +344,7 @@ export function SettingsPage() {
                             variant="danger"
                             size="sm"
                             icon={<Trash2 size={14} />}
-                            onClick={() => setShowClearModal(true)}
+                            onClick={() => { setBackupRequested(false); setShowClearModal(true) }}
                         >
                             Eliminar todos los datos
                         </Button>
@@ -389,13 +371,15 @@ export function SettingsPage() {
                         <AlertTriangle size={15} className="text-amber-500 mt-0.5 shrink-0" />
                         <div className="text-xs text-amber-800 dark:text-amber-300 space-y-1">
                             <p className="font-semibold">Se reemplazarán todos tus datos actuales</p>
-                            <p>Archivo: <span className="font-mono">{importFileName}</span></p>
+                            <p>Archivo: <span className="font-mono">{selectedBackup?.name}</span></p>
                             <p>Tus {days.length} días actuales y todo su historial se perderán.</p>
                         </div>
                     </div>
+                    <Button variant="secondary" fullWidth onClick={handleSafetyExport}>Descargar copia previa</Button>
+                    <p className="text-xs text-gray-500">Comprueba que la copia se ha descargado antes de continuar.</p>
                     <div className="flex gap-3">
                         <Button variant="ghost" fullWidth onClick={() => setShowImportModal(false)}>Cancelar</Button>
-                        <Button variant="primary" fullWidth icon={<Upload size={14} />} onClick={handleConfirmImport}>
+                        <Button variant="primary" fullWidth icon={<Upload size={14} />} disabled={!backupRequested} onClick={handleConfirmImport}>
                             Sí, importar
                         </Button>
                     </div>
@@ -409,9 +393,11 @@ export function SettingsPage() {
                         Se eliminarán <strong>{days.length} días</strong>, <strong>{totalExercises} ejercicios</strong> y todo el historial.
                         Esta acción <strong>no se puede deshacer</strong>.
                     </p>
+                    <Button variant="secondary" fullWidth onClick={handleSafetyExport}>Descargar copia previa</Button>
+                    <p className="text-xs text-gray-500">Comprueba que la copia se ha descargado antes de continuar.</p>
                     <div className="flex gap-3">
                         <Button variant="ghost" fullWidth onClick={() => setShowClearModal(false)}>Cancelar</Button>
-                        <Button variant="danger" fullWidth onClick={handleClearData}>Sí, eliminar todo</Button>
+                        <Button variant="danger" fullWidth disabled={!backupRequested} onClick={handleClearData}>Sí, eliminar todo</Button>
                     </div>
                 </div>
             </Modal>

@@ -1,3 +1,4 @@
+import { localDateKey, shiftLocalDay } from '../../../utils/dates'
 import { Trash2 } from 'lucide-react'
 import type { BodyWeightEntry } from '../types'
 
@@ -15,8 +16,9 @@ function formatDate(dateStr: string): string {
 }
 
 function relativeLabel(dateStr: string): string {
-    const today = new Date().toISOString().slice(0, 10)
-    const yesterday = new Date(Date.now() - 864e5).toISOString().slice(0, 10)
+    const now = new Date()
+    const today = localDateKey(now)
+    const yesterday = localDateKey(shiftLocalDay(now, -1))
     if (dateStr === today) return 'Hoy'
     if (dateStr === yesterday) return 'Ayer'
     return formatDate(dateStr)

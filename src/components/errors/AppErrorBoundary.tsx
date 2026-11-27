@@ -27,16 +27,14 @@ export class AppErrorBoundary extends Component<Props, State> {
             const storedData = Object.fromEntries(
                 getGymLabStorageKeys(localStorage).map(key => [key, localStorage.getItem(key) ?? ''])
             )
-            const programs = JSON.parse(storedData.gymlab_programs ?? '[]') as Array<{ id?: string; days?: unknown[] }>
-            const activeIdRaw = storedData.gymlab_active_program_id ?? ''
-            let activeId = activeIdRaw
+            // Preserve the raw storage even if the corruption caused this boundary.
+            let days: unknown[] = []
             try {
-                const parsedActiveId: unknown = JSON.parse(activeIdRaw)
-                if (typeof parsedActiveId === 'string') activeId = parsedActiveId
+                const legacy: unknown = JSON.parse(storedData.gymlab_days ?? '[]')
+                if (Array.isArray(legacy)) days = legacy
             } catch {
-                // Legacy versions stored the active id without JSON encoding.
+                // The original storage is still included below.
             }
-            const days = programs.find(program => program.id === activeId)?.days ?? programs[0]?.days ?? []
             const backup = JSON.stringify({
                 version: 2,
                 exportedAt: new Date().toISOString(),

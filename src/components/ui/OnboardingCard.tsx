@@ -2,7 +2,7 @@ import { CheckCircle2, Download, Smartphone, Sparkles } from 'lucide-react'
 import { useState } from 'react'
 
 interface OnboardingCardProps {
-    onSelect: (count: number, restSeconds: number) => Promise<void>
+    onSelect: (count: number, restSeconds: number) => void
 }
 
 const DAY_LABELS = ['A', 'B', 'C', 'D', 'E']
@@ -12,7 +12,7 @@ export function OnboardingCard({ onSelect }: OnboardingCardProps) {
     const [step, setStep] = useState<1 | 2 | 3>(1)
     const [selectedDays, setSelectedDays] = useState<number | null>(null)
     const [selectedRest, setSelectedRest] = useState<number | null>(null)
-    const [isCreating, setIsCreating] = useState(false)
+    const [creationFailed, setCreationFailed] = useState(false)
 
     const handleSelectDays = (count: number) => {
         setSelectedDays(count)
@@ -24,10 +24,15 @@ export function OnboardingCard({ onSelect }: OnboardingCardProps) {
         setStep(3)
     }
 
-    const handleFinish = async () => {
-        if (isCreating || !selectedDays || !selectedRest) return
-        setIsCreating(true)
-        await onSelect(selectedDays, selectedRest)
+    const handleFinish = () => {
+        if (selectedDays === null || selectedRest === null) return
+        setCreationFailed(false)
+        try {
+            onSelect(selectedDays, selectedRest)
+        } catch (error) {
+            console.error('Error al crear la rutina inicial:', error)
+            setCreationFailed(true)
+        }
     }
 
     const REST_OPTIONS = [
@@ -51,30 +56,19 @@ export function OnboardingCard({ onSelect }: OnboardingCardProps) {
                 </p>
                 <div className="grid grid-cols-2 gap-3 w-full max-w-[240px] mb-5">
                     {REST_OPTIONS.map(opt => {
-                        const isLoading = selectedRest === opt.value && isCreating
                         return (
                             <button
                                 key={opt.value}
                                 onClick={() => handleSelectRest(opt.value)}
-                                disabled={isCreating}
                                 className={[
                                     'py-4 rounded-3xl flex items-center justify-center',
                                     'font-bold text-base border-2 transition-all duration-200',
-                                    'disabled:cursor-not-allowed',
                                     selectedRest === opt.value
                                         ? 'bg-amber-500 border-amber-500 text-white scale-105'
                                         : 'bg-gray-50 dark:bg-white/5 border-gray-200 dark:border-white/10 text-gray-800 dark:text-white hover:border-amber-500/60 hover:bg-amber-50/50 dark:hover:bg-amber-500/10',
-                                    !selectedRest && isCreating ? 'opacity-40' : '',
                                 ].join(' ')}
                             >
-                                {isLoading ? (
-                                    <svg className="animate-spin w-5 h-5 text-white" viewBox="0 0 24 24" fill="none">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-                                    </svg>
-                                ) : (
-                                    opt.label
-                                )}
+                                {opt.label}
                             </button>
                         )
                     })}
@@ -119,21 +113,16 @@ export function OnboardingCard({ onSelect }: OnboardingCardProps) {
                 <div className="w-full max-w-[260px]">
                     <button
                         onClick={handleFinish}
-                        disabled={isCreating}
-                        className="w-full py-4 rounded-2xl font-bold text-[15px] bg-gray-900 dark:bg-white text-white dark:text-black transition-transform active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
+                        className="w-full py-4 rounded-2xl font-bold text-[15px] bg-gray-900 dark:bg-white text-white dark:text-black transition-transform active:scale-95 flex items-center justify-center gap-2"
                     >
-                        {isCreating ? (
-                            <svg className="animate-spin w-5 h-5" viewBox="0 0 24 24" fill="none">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-                            </svg>
-                        ) : (
-                            <>
-                                <Download size={18} />
-                                ¡Entendido, a entrenar!
-                            </>
-                        )}
+                        <Download size={18} />
+                        ¡Entendido, a entrenar!
                     </button>
+                    {creationFailed && (
+                        <p role="alert" className="mt-3 text-center text-sm text-red-600 dark:text-red-400">
+                            No se ha podido crear la rutina. Vuelve a intentarlo.
+                        </p>
+                    )}
                 </div>
             </div>
         )
@@ -164,41 +153,19 @@ export function OnboardingCard({ onSelect }: OnboardingCardProps) {
             <div className="flex gap-3 mb-5">
                 {OPTIONS.map(count => {
                     const isSelected = selectedDays === count
-                    const isLoading = isSelected && isCreating
                     return (
                         <button
                             key={count}
                             onClick={() => handleSelectDays(count)}
-                            disabled={isCreating}
                             className={[
                                 'w-16 h-16 rounded-3xl flex flex-col items-center justify-center gap-0.5',
                                 'font-bold text-xl border-2 transition-all duration-200',
-                                'disabled:cursor-not-allowed',
                                 isSelected
                                     ? 'bg-blue-600 dark:bg-blue-500 border-blue-600 dark:border-blue-500 text-white scale-105'
                                     : 'bg-gray-50 dark:bg-white/5 border-gray-200 dark:border-white/10 text-gray-800 dark:text-white hover:border-blue-500/60 hover:bg-blue-50/50 dark:hover:bg-blue-500/10',
-                                !isSelected && isCreating ? 'opacity-40' : '',
                             ].join(' ')}
                         >
-                            {isLoading ? (
-                                // Spinner while creating
-                                <svg
-                                    className="animate-spin w-6 h-6 text-white"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                >
-                                    <circle
-                                        className="opacity-25"
-                                        cx="12" cy="12" r="10"
-                                        stroke="currentColor" strokeWidth="3"
-                                    />
-                                    <path
-                                        className="opacity-75"
-                                        fill="currentColor"
-                                        d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                                    />
-                                </svg>
-                            ) : isSelected ? (
+                            {isSelected ? (
                                 <CheckCircle2 size={24} className="text-white" />
                             ) : (
                                 <>

@@ -1,3 +1,4 @@
+import { localDateKey } from '../../../utils/dates'
 import { useState } from 'react'
 
 interface AddWeightSheetProps {
@@ -7,21 +8,16 @@ interface AddWeightSheetProps {
     onSave: (weight: number, date?: string) => void
 }
 
-function todayStr() {
-    return new Date().toISOString().slice(0, 10)
-}
-
 export function AddWeightSheet({ initialWeight, onClose, onSave }: AddWeightSheetProps) {
     const [weight, setWeight] = useState(initialWeight != null ? String(initialWeight) : '')
-    const [date, setDate] = useState(todayStr())
+    const [date, setDate] = useState(localDateKey())
 
     const parsed = parseFloat(weight.replace(',', '.'))
-    const isValid = !isNaN(parsed) && parsed > 0
+    const isValid = Number.isFinite(parsed) && parsed > 0 && date !== '' && date <= localDateKey()
 
     const handleSave = () => {
         if (!isValid) return
-        const isToday = date === todayStr()
-        onSave(parsed, isToday ? undefined : date)
+        onSave(parsed, date)
         onClose()
     }
 
@@ -61,7 +57,7 @@ export function AddWeightSheet({ initialWeight, onClose, onSave }: AddWeightShee
                     <input
                         type="date"
                         value={date}
-                        max={todayStr()}
+                        max={localDateKey()}
                         onChange={e => setDate(e.target.value)}
                         className="w-full bg-gray-100 dark:bg-white/8 border border-gray-200/80 dark:border-white/10 rounded-2xl px-4 py-3 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
                     />

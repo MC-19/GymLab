@@ -1,7 +1,10 @@
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import { useLocalStorage } from './useLocalStorage'
 import type { TrainingProgram, WorkoutDay, WorkoutState, CompletedSession } from '../types'
 import { generateId } from '../utils/helpers'
+import { sessionDates } from '../utils/dates'
+import { getActiveDays } from './usePrograms'
+import { isWorkoutState, migrateLegacySessions } from '../utils/backup'
 
 const STATE_KEY = 'gymlab_state'
 
@@ -12,126 +15,120 @@ const DEFAULT_STATE: WorkoutState = {
 }
 
 export function parseWorkoutState(raw: string | null, activeProgramId = ''): WorkoutState {
-    try {
-        if (!raw) return DEFAULT_STATE
-        const parsed = JSON.parse(raw) as Partial<WorkoutState> & { currentDayIndex?: number }
-        const legacyIndex = Number.isInteger(parsed.currentDayIndex) ? parsed.currentDayIndex! : 0
-        return {
-            version: 2,
-            currentDayIndexByProgram: parsed.currentDayIndexByProgram
-                ?? (activeProgramId ? { [activeProgramId]: legacyIndex } : {}),
-            sessions: Array.isArray(parsed.sessions)
-                ? parsed.sessions.map(session =>
-                    activeProgramId && !session.programId
-                        ? { ...session, programId: activeProgramId }
-                        : session
-                )
-                : [],
-        }
-    } catch {
-        return DEFAULT_STATE
+    if (raw === null) return { ...DEFAULT_STATE }
+    const parsed: unknown = JSON.parse(raw)
+    if (!isWorkoutState(parsed)) throw new Error('Rotación guardada inválida')
+    return {
+        version: 2,
+        currentDayIndexByProgram: parsed.currentDayIndexByProgram
+            ?? (activeProgramId ? { [activeProgramId]: parsed.currentDayIndex ?? 0 } : {}),
+        ...(parsed.currentDayIdByProgram && { currentDayIdByProgram: parsed.currentDayIdByProgram }),
+        // Resolve unassigned sessions by their original day where possible in the UI.
+        sessions: parsed.sessions ?? [],
     }
 }
 
-export function useRotation(activeProgram: TrainingProgram | null) {
-    const activeProgramId = activeProgram?.id ?? ''
-    const [state, setState] = useLocalStorage<WorkoutState>(
-        STATE_KEY,
-        DEFAULT_STATE,
-        () => parseWorkoutState(localStorage.getItem(STATE_KEY), activeProgramId)
-    )
-    const currentDayIndex = activeProgramId
-        ? state.currentDayIndexByProgram[activeProgramId] ?? 0
-        : 0
+export function getRotationIndex(state: WorkoutState, programId: string, days: WorkoutDay[]): number {
+    if (days.length === 0) return 0
+    const dayIds = state.currentDayIdByProgram ?? {}
+    const dayId = Object.hasOwn(dayIds, programId) ? dayIds[programId] : undefined
+    if (dayId) return Math.max(0, days.findIndex(day => day.id === dayId))
+    const index = Object.hasOwn(state.currentDayIndexByProgram, programId) ? state.currentDayIndexByProgram[programId] : 0
+    return Math.max(0, index) % days.length
+}
 
-    /**
-     * Devuelve el día que toca ahora dado el array de días.
-     * Si no hay días, devuelve null.
-     */
+export function pointRotationAt(state: WorkoutState, programId: string, days: WorkoutDay[], index: number): WorkoutState {
+    const validIndex = days[index] ? index : 0
+    const day = days[validIndex]
+    const dayIds = day ? { ...state.currentDayIdByProgram, [programId]: day.id } : { ...state.currentDayIdByProgram }
+    if (!day) delete dayIds[programId]
+    return {
+        ...state,
+        currentDayIdByProgram: dayIds,
+        currentDayIndexByProgram: { ...state.currentDayIndexByProgram, [programId]: validIndex },
+    }
+}
+
+export function removeDayFromRotation(state: WorkoutState, programId: string, days: WorkoutDay[], dayId: string): WorkoutState {
+    const current = getRotationIndex(state, programId, days)
+    const remaining = days.filter(day => day.id !== dayId)
+    const currentId = days[current]?.id === dayId ? days[(current + 1) % days.length]?.id : days[current]?.id
+    return pointRotationAt(state, programId, remaining, remaining.findIndex(day => day.id === currentId))
+}
+
+export function advanceRotation(state: WorkoutState, programId: string, days: WorkoutDay[], session: CompletedSession): WorkoutState {
+    const index = days.findIndex(day => day.id === session.dayId)
+    if (index < 0) return state
+    return {
+        ...pointRotationAt(state, programId, days, (index + 1) % days.length),
+        sessions: [...state.sessions, session],
+    }
+}
+
+export function useRotation(activeProgram: TrainingProgram | null, programs: TrainingProgram[], days: WorkoutDay[]) {
+    const activeProgramId = activeProgram?.id ?? ''
+    const [legacySessions] = useState(() => {
+        const raw = localStorage.getItem('gymlab_sessions')
+        return raw === null ? [] : migrateLegacySessions(JSON.parse(raw))
+    })
+    const [state, setState] = useLocalStorage<WorkoutState>(STATE_KEY, DEFAULT_STATE, () => {
+        const initial = parseWorkoutState(localStorage.getItem(STATE_KEY), activeProgramId)
+        return programs.reduce((current, program) => {
+            const programDays = getActiveDays(program)
+            return pointRotationAt(current, program.id, programDays, getRotationIndex(current, program.id, programDays))
+        }, initial)
+    })
+    // Keep legacy snapshots in their original key instead of spending quota on a second copy.
+    const known = new Set(state.sessions.map(session => session.id))
+    const allSessions = [...legacySessions.filter(session => !known.has(session.id)), ...state.sessions]
+    const currentDayIndex = getRotationIndex(state, activeProgramId, days)
+
     const getCurrentDay = useCallback(
-        (days: WorkoutDay[]): WorkoutDay | null => {
-            if (days.length === 0) return null
-            const idx = currentDayIndex % days.length
-            return days[idx] ?? null
-        },
+        (routine: WorkoutDay[]) => routine[currentDayIndex] ?? null,
         [currentDayIndex]
     )
 
-    /**
-     * Completa la sesión actual:
-     * - Guarda un CompletedSession en el historial
-     * - Avanza currentDayIndex de forma circular
-     */
-    const completeSession = useCallback(
-        (dayId: string, totalDays: number) => {
-            const session: CompletedSession = {
-                id: generateId(),
-                programId: activeProgramId || undefined,
-                programName: activeProgram?.name,
-                dayId,
-                dayName: activeProgram?.days.find(day => day.id === dayId)?.name,
-                completedAt: new Date().toISOString(),
-            }
-            setState(prev => ({
-                ...prev,
-                currentDayIndexByProgram: activeProgramId ? {
-                    ...prev.currentDayIndexByProgram,
-                    [activeProgramId]: totalDays > 0
-                        ? ((prev.currentDayIndexByProgram[activeProgramId] ?? 0) + 1) % totalDays
-                        : 0,
-                } : prev.currentDayIndexByProgram,
-                sessions: [...prev.sessions, session],
-            }))
-        },
-        [activeProgram, activeProgramId, setState]
+    const completeSession = useCallback((dayId: string) => {
+        if (!activeProgram) return
+        const session: CompletedSession = {
+            id: generateId(),
+            programId: activeProgram.id,
+            programName: activeProgram.name,
+            dayId,
+            dayName: days.find(day => day.id === dayId)?.name,
+            completedAt: new Date().toISOString(),
+        }
+        setState(prev => advanceRotation(prev, activeProgram.id, days, session))
+    }, [activeProgram, days, setState])
+
+    const sessions = allSessions.filter(session =>
+        session.programId === activeProgramId
+        || (!session.programId && activeProgram?.days.some(day => day.id === session.dayId))
     )
 
-    /**
-     * Devuelve las sesiones de los últimos N días (para el calendario visual).
-     * Por defecto devuelve las de los últimos 7 días.
-     */
-    const getRecentSessions = useCallback(
-        (days = 7): CompletedSession[] => {
-            const cutoff = new Date()
-            cutoff.setDate(cutoff.getDate() - days)
-            return state.sessions.filter(s =>
-                (!s.programId || s.programId === activeProgramId)
-                && new Date(s.completedAt) >= cutoff
-            )
-        },
-        [activeProgramId, state.sessions]
-    )
+    const getRecentSessions = (count = 7) => sessionDates(sessions, 'recent', new Date(), count)
 
-    const sessions = state.sessions.filter(s => !s.programId || s.programId === activeProgramId)
-
-    /** Reinicia la rotación al Día 0 (no borra el historial) */
-    const resetRotation = useCallback(() => {
-        if (!activeProgramId) return
-        setState(prev => ({
-            ...prev,
-            currentDayIndexByProgram: { ...prev.currentDayIndexByProgram, [activeProgramId]: 0 },
-        }))
-    }, [activeProgramId, setState])
-
-    /** Establece manualmente el índice de la rotación */
-    const setCurrentDayIndex = useCallback(
-        (index: number) => {
-            if (!activeProgramId) return
-            setState(prev => ({
-                ...prev,
-                currentDayIndexByProgram: { ...prev.currentDayIndexByProgram, [activeProgramId]: index },
-            }))
-        },
-        [activeProgramId, setState]
-    )
+    const setCurrentDayIndex = useCallback((index: number) => {
+        if (activeProgramId) setState(prev => pointRotationAt(prev, activeProgramId, days, index))
+    }, [activeProgramId, days, setState])
 
     return {
         currentDayIndex,
         sessions,
+        allSessions,
         getCurrentDay,
         completeSession,
         getRecentSessions,
-        resetRotation,
+        resetRotation: () => setCurrentDayIndex(0),
         setCurrentDayIndex,
+        removeDay: (dayId: string) => {
+            if (activeProgramId) setState(prev => removeDayFromRotation(prev, activeProgramId, days, dayId))
+        },
+        // Anchor the current ID before a structural edit, including newly created programs.
+        anchorRotation: () => {
+            if (activeProgramId && days.length > 0 && !state.currentDayIdByProgram?.[activeProgramId]) {
+                setCurrentDayIndex(currentDayIndex)
+            }
+        },
     }
 }
