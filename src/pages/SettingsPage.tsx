@@ -6,7 +6,10 @@ import { useTimer } from '../context/TimerContext'
 import { Button } from '../components/ui/Button'
 import { Modal } from '../components/ui/Modal'
 import type { ThemeMode } from '../types'
-import { backupToStorage, parseBackup, readGymLabStorage, replaceGymLabStorage } from '../utils/backup'
+import { backupToStorage, parseBackup, readGymLabStorage } from '../utils/backup'
+import { getStorageErrorMessage, isStorageQuotaError } from '../services/storageErrors'
+import { restoreTrainingBackup } from '../features/training/backup'
+import { trainingRepository } from '../features/training/repository'
 import { useAnalyticsConsent } from '../hooks/useAnalyticsConsent'
 import { generateId } from '../utils/helpers'
 import { Link } from 'react-router-dom'
@@ -24,7 +27,8 @@ export function SettingsPage() {
     const { consent, acceptAnalytics, rejectAnalytics } = useAnalyticsConsent()
     const [showClearModal, setShowClearModal] = useState(false)
     const [showImportModal, setShowImportModal] = useState(false)
-    const [selectedBackup, setSelectedBackup] = useState<{ raw: string; name: string } | null>(null)
+    const [selectedBackup, setSelectedBackup] = useState<{ raw: string; name: string; version: number } | null>(null)
+    const [busy, setBusy] = useState(false)
     const [backupRequested, setBackupRequested] = useState(false)
     const importReaderRef = useRef<FileReader | null>(null)
     const fileInputRef = useRef<HTMLInputElement>(null)
@@ -34,13 +38,15 @@ export function SettingsPage() {
     const totalSets = days.reduce((sum, d) => sum + d.exercises.reduce((es, e) => es + e.weeks.reduce((ws, w) => ws + w.sets.length, 0), 0), 0)
 
     // ── Exportar ──────────────────────────────────────────────────────────────
-    const handleExport = () => {
+    const handleExport = async () => {
         try {
+            const { sessions: trainingSessions, storage } = await trainingRepository.backupSnapshot(() => readGymLabStorage(localStorage))
             const backup = {
-                version: 2,
+                version: 3,
                 exportedAt: new Date().toISOString(),
                 days,
-                localStorage: readGymLabStorage(localStorage),
+                localStorage: storage,
+                trainingSessions,
             }
             const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' })
             const url = URL.createObjectURL(blob)
@@ -79,8 +85,8 @@ export function SettingsPage() {
             try {
                 const raw = reader.result
                 if (typeof raw !== 'string') throw new Error('No se ha podido leer el archivo')
-                parseBackup(raw)
-                setSelectedBackup({ raw, name: file.name })
+                const backup = parseBackup(raw)
+                setSelectedBackup({ raw, name: file.name, version: backup.version })
                 setShowImportModal(true)
             } catch (error) {
                 showToast(error instanceof Error ? error.message : 'Error al leer el archivo', 'error')
@@ -92,32 +98,42 @@ export function SettingsPage() {
         reader.readAsText(file)
     }
 
-    const handleConfirmImport = () => {
-        if (!selectedBackup || !backupRequested) return
+    const handleConfirmImport = async () => {
+        if (!selectedBackup || !backupRequested || busy) return
+        setBusy(true)
         try {
             const backup = parseBackup(selectedBackup.raw)
-            replaceGymLabStorage(localStorage, backupToStorage(backup, generateId(), new Date().toISOString()))
+            await restoreTrainingBackup(localStorage, backupToStorage(backup, generateId(), new Date().toISOString()), backup.trainingSessions)
             stopTimer()
             window.location.reload()
         } catch (error) {
-            showToast(error instanceof Error ? error.message : 'Error al importar los datos', 'error')
+            const message = isStorageQuotaError(error) ? getStorageErrorMessage(error)
+                : error instanceof Error ? error.message : 'Error al importar los datos'
+            showToast(message, 'error')
+            setBusy(false)
         }
-        setShowImportModal(false)
     }
 
-    const handleClearData = () => {
-        if (!backupRequested) return
+    const handleClearData = async () => {
+        if (!backupRequested || busy) return
+        setBusy(true)
         try {
-            replaceGymLabStorage(localStorage, {})
+            await restoreTrainingBackup(localStorage, {}, [])
             stopTimer()
             window.location.reload()
         } catch (error) {
-            showToast(error instanceof Error ? error.message : 'Error al eliminar los datos', 'error')
+            const message = isStorageQuotaError(error) ? getStorageErrorMessage(error)
+                : error instanceof Error ? error.message : 'Error al eliminar los datos'
+            showToast(message, 'error')
+            setBusy(false)
         }
     }
 
-    const handleSafetyExport = () => {
-        setBackupRequested(handleExport())
+    const handleSafetyExport = async () => {
+        if (busy) return
+        setBusy(true)
+        setBackupRequested(await handleExport())
+        setBusy(false)
     }
 
     return (
@@ -264,7 +280,7 @@ export function SettingsPage() {
                                 variant="ghost"
                                 size="sm"
                                 icon={<Download size={14} />}
-                                onClick={handleExport}
+                                disabled={busy} onClick={() => void handleExport()}
                             >
                                 Exportar backup
                             </Button>
@@ -365,21 +381,23 @@ export function SettingsPage() {
             </div>
 
             {/* Modal: Confirmar importación */}
-            <Modal open={showImportModal} onClose={() => setShowImportModal(false)} title="¿Importar este backup?">
+            <Modal open={showImportModal} onClose={() => { if (!busy) setShowImportModal(false) }} title="¿Importar este backup?">
                 <div className="space-y-4">
                     <div className="flex items-start gap-3 p-3 rounded-2xl bg-amber-50 dark:bg-amber-500/8 border border-amber-200/60 dark:border-amber-500/20">
                         <AlertTriangle size={15} className="text-amber-500 mt-0.5 shrink-0" />
                         <div className="text-xs text-amber-800 dark:text-amber-300 space-y-1">
-                            <p className="font-semibold">Se reemplazarán todos tus datos actuales</p>
+                            <p className="font-semibold">Se restaurarán los datos de esta copia</p>
                             <p>Archivo: <span className="font-mono">{selectedBackup?.name}</span></p>
-                            <p>Tus {days.length} días actuales y todo su historial se perderán.</p>
+                            <p>{selectedBackup?.version === 3
+                                ? 'Se reemplazarán las rutinas, los entrenamientos guardados y la sesión activa.'
+                                : 'Se reemplazarán las rutinas y el historial antiguo. Los entrenamientos de GymLab Training se conservarán.'}</p>
                         </div>
                     </div>
-                    <Button variant="secondary" fullWidth onClick={handleSafetyExport}>Descargar copia previa</Button>
+                    <Button variant="secondary" fullWidth disabled={busy} onClick={() => void handleSafetyExport()}>Descargar copia previa</Button>
                     <p className="text-xs text-gray-500">Comprueba que la copia se ha descargado antes de continuar.</p>
                     <div className="flex gap-3">
-                        <Button variant="ghost" fullWidth onClick={() => setShowImportModal(false)}>Cancelar</Button>
-                        <Button variant="primary" fullWidth icon={<Upload size={14} />} disabled={!backupRequested} onClick={handleConfirmImport}>
+                        <Button variant="ghost" fullWidth disabled={busy} onClick={() => setShowImportModal(false)}>Cancelar</Button>
+                        <Button variant="primary" fullWidth icon={<Upload size={14} />} disabled={!backupRequested || busy} onClick={() => void handleConfirmImport()}>
                             Sí, importar
                         </Button>
                     </div>
@@ -387,17 +405,17 @@ export function SettingsPage() {
             </Modal>
 
             {/* Modal: Confirmar borrado */}
-            <Modal open={showClearModal} onClose={() => setShowClearModal(false)} title="¿Eliminar todos los datos?">
+            <Modal open={showClearModal} onClose={() => { if (!busy) setShowClearModal(false) }} title="¿Eliminar todos los datos?">
                 <div className="space-y-4">
                     <p className="text-sm text-gray-600 dark:text-gray-400">
                         Se eliminarán <strong>{days.length} días</strong>, <strong>{totalExercises} ejercicios</strong> y todo el historial.
                         Esta acción <strong>no se puede deshacer</strong>.
                     </p>
-                    <Button variant="secondary" fullWidth onClick={handleSafetyExport}>Descargar copia previa</Button>
+                    <Button variant="secondary" fullWidth disabled={busy} onClick={() => void handleSafetyExport()}>Descargar copia previa</Button>
                     <p className="text-xs text-gray-500">Comprueba que la copia se ha descargado antes de continuar.</p>
                     <div className="flex gap-3">
-                        <Button variant="ghost" fullWidth onClick={() => setShowClearModal(false)}>Cancelar</Button>
-                        <Button variant="danger" fullWidth disabled={!backupRequested} onClick={handleClearData}>Sí, eliminar todo</Button>
+                        <Button variant="ghost" fullWidth disabled={busy} onClick={() => setShowClearModal(false)}>Cancelar</Button>
+                        <Button variant="danger" fullWidth disabled={!backupRequested || busy} onClick={() => void handleClearData()}>Sí, eliminar todo</Button>
                     </div>
                 </div>
             </Modal>

@@ -159,7 +159,7 @@ export function RoutinesPage() {
                                 className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-blue-600 dark:bg-blue-500 text-white text-sm font-semibold hover:bg-blue-700 dark:hover:bg-blue-600 active:scale-95 transition-all duration-150"
                             >
                                 <Zap size={14} />
-                                Empezar entrenamiento
+                                Ver rutina
                             </button>
                         </div>
                     </div>

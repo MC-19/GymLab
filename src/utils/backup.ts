@@ -1,11 +1,13 @@
+import { validateSessions, type WorkoutSession } from '../features/training/session'
 import type { BodyWeightEntry, CompletedSession, LoggedSet, TrainingProgram, WorkoutDay, WorkoutState } from '../types'
 
 export const GYMLAB_STORAGE_PREFIX = 'gymlab_'
 
 export interface GymLabBackup {
-    version: 1 | 2
+    version: 1 | 2 | 3
     days: WorkoutDay[]
     localStorage?: Record<string, string>
+    trainingSessions?: WorkoutSession[]
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -100,7 +102,8 @@ export function parseBackup(raw: string): GymLabBackup {
     if (!isRecord(parsed)) throw new Error('El archivo no contiene días de entrenamiento válidos')
     const days = migrateLegacyDays(parsed.days)
 
-    if (parsed.version === 2) {
+    if (parsed.version === 2 || parsed.version === 3) {
+        const trainingSessions = parsed.version === 3 ? validateSessions(parsed.trainingSessions) : undefined
         if (!isRecord(parsed.localStorage)) throw new Error('El backup no contiene almacenamiento válido')
         const entries = Object.entries(parsed.localStorage)
         if (!entries.every(([key, value]) => key.toLowerCase().startsWith(GYMLAB_STORAGE_PREFIX) && typeof value === 'string')) {
@@ -124,9 +127,9 @@ export function parseBackup(raw: string): GymLabBackup {
         validate('gymlab_default_rest', value => typeof value === 'number' && Number.isFinite(value) && value > 0, 'descanso')
         if (storage.gymlab_programs === undefined && storage.gymlab_days === undefined) {
             if (!days.length) throw new Error('El backup no contiene programas ni rutinas')
-            return { version: 2, days, localStorage: { ...storage, gymlab_days: JSON.stringify(days) } }
+            return { version: parsed.version, days, trainingSessions, localStorage: { ...storage, gymlab_days: JSON.stringify(days) } }
         }
-        return { version: 2, days, localStorage: storage }
+        return { version: parsed.version, days, trainingSessions, localStorage: storage }
     }
 
     if (parsed.version !== undefined && parsed.version !== 1) {
@@ -168,7 +171,7 @@ export function readGymLabStorage(storage: Storage): Record<string, string> {
 }
 
 export function backupToStorage(backup: GymLabBackup, id: string, createdAt: string): Record<string, string> {
-    if (backup.version === 2) return backup.localStorage ?? {}
+    if (backup.version !== 1) return backup.localStorage ?? {}
     const program: TrainingProgram = { id, name: 'Backup Importado', createdAt, isArchived: false, days: backup.days }
     return { gymlab_programs: JSON.stringify([program]), gymlab_active_program_id: JSON.stringify(id) }
 }

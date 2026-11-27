@@ -1,4 +1,5 @@
-import { ArrowDown, ArrowUp, CheckCircle2, ChevronLeft, ChevronRight, Dumbbell, Pencil, Plus, Search, Trash2 } from 'lucide-react'
+import { StartTrainingButton } from '../features/training/StartTrainingButton'
+import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight, Dumbbell, Pencil, Plus, Search, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ExerciseCatalogSheet } from '../components/exercises/ExerciseCatalogSheet'
@@ -28,7 +29,7 @@ const MUSCLE_GROUPS: MuscleGroup[] = [
 export function WorkoutDayPage() {
     const { dayId } = useParams<{ dayId: string }>()
     const navigate = useNavigate()
-    const { days, updateDay, deleteExercise, addExercise, updateExercise, reorderExercises, completeSession } = useWorkoutContext()
+    const { days, updateDay, deleteExercise, addExercise, updateExercise, reorderExercises } = useWorkoutContext()
 
     const day = days.find(d => d.id === dayId)
 
@@ -271,17 +272,7 @@ export function WorkoutDayPage() {
                             )
                         })}
 
-                        {/* Finalizar entrenamiento */}
-                        <button
-                            onClick={() => {
-                                completeSession(day.id)
-                                navigate('/')
-                            }}
-                            className="w-full flex items-center justify-center gap-2 py-4 mt-1 rounded-3xl bg-blue-600 dark:bg-blue-500 text-white font-semibold text-sm hover:bg-blue-700 dark:hover:bg-blue-600 active:scale-[0.98] transition-all duration-150"
-                        >
-                            <CheckCircle2 size={18} />
-                            Finalizar entrenamiento
-                        </button>
+                        <StartTrainingButton day={day} />
 
                         {/* Add exercise button */}
                         <button
