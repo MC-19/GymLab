@@ -1,6 +1,7 @@
 import { TrainingPage } from './features/training/TrainingPage'
 import { SessionHistoryPage } from './features/training/SessionHistoryPage'
-import { Routes, Route, useMatch } from 'react-router-dom'
+import { useLayoutEffect } from 'react'
+import { Routes, Route, useLocation, useMatch, useNavigationType } from 'react-router-dom'
 import { AppShell } from './components/layout/AppShell'
 import { Dashboard } from './pages/Dashboard'
 import { WorkoutDayPage } from './pages/WorkoutDayPage'
@@ -19,6 +20,13 @@ import { StorageErrorNotifier } from './components/ui/StorageErrorNotifier'
 
 export default function App() {
   const isTraining = useMatch('/training') !== null
+  const { pathname } = useLocation()
+  const navigationType = useNavigationType()
+
+  useLayoutEffect(() => {
+    if (navigationType !== 'POP') window.scrollTo(0, 0)
+  }, [pathname, navigationType])
+
   return (
     <AppShell training={isTraining}>
       <PwaReloadPrompt />

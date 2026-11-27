@@ -75,9 +75,8 @@ export function Dashboard() {
     )
 
     return (
-        <div className="page-enter">
-            {/* Header */}
-            <div className="sticky top-0 z-30 bg-white/80 dark:bg-black/80 backdrop-blur-xl border-b border-gray-100/60 dark:border-white/8">
+        <div>
+            <header className="border-b border-gray-100/60 bg-white pt-[env(safe-area-inset-top)] dark:border-white/8 dark:bg-black">
                 <div className="flex items-center justify-between px-5 h-14 max-w-lg mx-auto">
                     <div className="shrink-0" aria-label="GymLab">
                         <img src="/brand/gymlab-logo-light.svg" alt="GymLab" className="h-9 w-auto max-w-[148px] dark:hidden" />
@@ -97,9 +96,9 @@ export function Dashboard() {
                         <ThemeToggle />
                     </div>
                 </div>
-            </div>
+            </header>
 
-            <div className="px-5 pt-6 pb-24 max-w-lg mx-auto space-y-5">
+            <div className="page-enter px-5 pt-6 pb-24 max-w-lg mx-auto space-y-5">
 
                 {trainingName !== undefined ? (
                     <section className="space-y-3 rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-white/10 dark:bg-white/5" aria-labelledby="today-training">

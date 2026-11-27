@@ -137,15 +137,14 @@ export function SettingsPage() {
     }
 
     return (
-        <div className="page-enter">
-            {/* Header */}
-            <div className="sticky top-0 z-30 bg-white/80 dark:bg-black/80 backdrop-blur-xl border-b border-gray-100/60 dark:border-white/8">
+        <div>
+            <header className="border-b border-gray-100/60 bg-white pt-[env(safe-area-inset-top)] dark:border-white/8 dark:bg-black">
                 <div className="flex items-center px-5 h-14 max-w-lg mx-auto">
                     <h1 className="text-base font-bold text-gray-900 dark:text-white">Ajustes</h1>
                 </div>
-            </div>
+            </header>
 
-            <div className="px-5 pt-5 pb-8 max-w-lg mx-auto space-y-6">
+            <div className="page-enter px-5 pt-5 pb-8 max-w-lg mx-auto space-y-6">
 
                 {/* Theme */}
                 <Section title="Apariencia">
@@ -370,7 +369,8 @@ export function SettingsPage() {
                 {/* About */}
                 <Section title="Sobre GymLab">
                     <div className="flex flex-col items-center gap-3 py-2">
-                        <img src="/icons/icon-512.png" alt="GymLab" className="h-40 w-auto object-contain" />
+                        <img src="/brand/gymlab-logo-light.svg" alt="GymLab" className="h-40 w-full max-w-[240px] object-contain dark:hidden" />
+                        <img src="/brand/gymlab-logo-dark.svg" alt="GymLab" className="hidden h-40 w-full max-w-[240px] object-contain dark:block" />
                         <div className="space-y-1 text-center text-sm text-gray-600 dark:text-gray-500">
                             <p>Versión <span className="font-medium text-gray-900 dark:text-gray-300">1.4.1</span></p>
                             <p>Datos guardados localmente en tu dispositivo.</p>
