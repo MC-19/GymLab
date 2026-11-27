@@ -12,17 +12,14 @@ export function useLocalStorage<T>(
 ) {
     const [value, setValue] = useState<T>(() => {
         if (loader) return loader()
-        try {
-            const item = localStorage.getItem(key)
-            return item ? (JSON.parse(item) as T) : initialValue
-        } catch {
-            return initialValue
-        }
+        const item = localStorage.getItem(key)
+        return item === null ? initialValue : JSON.parse(item) as T
     })
 
     useEffect(() => {
         try {
-            localStorage.setItem(key, JSON.stringify(value))
+            const serialized = JSON.stringify(value)
+            if (localStorage.getItem(key) !== serialized) localStorage.setItem(key, serialized)
         } catch (error) {
             reportStorageError(error)
         }

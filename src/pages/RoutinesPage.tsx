@@ -326,7 +326,7 @@ export function RoutinesPage() {
             <Modal open={deleteConfirm !== null} onClose={() => setDeleteConfirm(null)} title="¿Eliminar día?">
                 <div className="space-y-4">
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Se eliminarán todos los ejercicios y series de este día. Esta acción no se puede deshacer.
+                        El día se retirará de la rotación. Sus registros seguirán disponibles en Progresión.
                     </p>
                     <div className="flex gap-3">
                         <Button variant="ghost" fullWidth onClick={() => setDeleteConfirm(null)}>Cancelar</Button>

@@ -274,7 +274,7 @@ export function WorkoutDayPage() {
                         {/* Finalizar entrenamiento */}
                         <button
                             onClick={() => {
-                                completeSession(day.id, days.length)
+                                completeSession(day.id)
                                 navigate('/')
                             }}
                             className="w-full flex items-center justify-center gap-2 py-4 mt-1 rounded-3xl bg-blue-600 dark:bg-blue-500 text-white font-semibold text-sm hover:bg-blue-700 dark:hover:bg-blue-600 active:scale-[0.98] transition-all duration-150"
@@ -355,7 +355,7 @@ export function WorkoutDayPage() {
             <Modal open={deleteConfirm !== null} onClose={() => setDeleteConfirm(null)} title="¿Eliminar ejercicio?">
                 <div className="space-y-4">
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Se eliminarán todas las series de este ejercicio. Esta acción no se puede deshacer.
+                        El ejercicio se retirará de esta rutina. Sus registros seguirán disponibles en Progresión.
                     </p>
                     <div className="flex gap-3">
                         <Button variant="ghost" fullWidth onClick={() => setDeleteConfirm(null)}>Cancelar</Button>

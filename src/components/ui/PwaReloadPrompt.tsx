@@ -1,25 +1,27 @@
+import { useEffect, useState } from 'react'
 import { useRegisterSW } from 'virtual:pwa-register/react'
 import { RefreshCw, X } from 'lucide-react'
 
 export function PwaReloadPrompt() {
+    const [registration, setRegistration] = useState<ServiceWorkerRegistration>()
     const {
         needRefresh: [needRefresh, setNeedRefresh],
         updateServiceWorker,
     } = useRegisterSW({
-        onRegistered(r: ServiceWorkerRegistration | undefined) {
-            // Check for updates every time the window gets focus
-            if (r) {
-                document.addEventListener('visibilitychange', () => {
-                    if (document.visibilityState === 'visible') {
-                        r.update()
-                    }
-                })
-            }
-        },
+        onRegistered: setRegistration,
         onRegisterError(error: unknown) {
             console.error('SW registration error', error)
         },
     })
+
+    useEffect(() => {
+        if (!registration) return
+        const onVisible = () => {
+            if (!document.hidden) void registration.update().catch(() => undefined)
+        }
+        document.addEventListener('visibilitychange', onVisible)
+        return () => document.removeEventListener('visibilitychange', onVisible)
+    }, [registration])
 
     const close = () => setNeedRefresh(false)
 

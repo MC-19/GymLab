@@ -46,8 +46,9 @@ interface WorkoutContextType {
     // Rotation
     currentDayIndex: number
     sessions: CompletedSession[]
+    allSessions: CompletedSession[]
     getCurrentDay: (days: WorkoutDay[]) => WorkoutDay | null
-    completeSession: (dayId: string, totalDays: number) => void
+    completeSession: (dayId: string) => void
     getRecentSessions: (days?: number) => CompletedSession[]
     resetRotation: () => void
     setCurrentDayIndex: (index: number) => void
@@ -58,13 +59,21 @@ const WorkoutContext = createContext<WorkoutContextType | null>(null)
 export function WorkoutProvider({ children }: { children: ReactNode }) {
     const programsApi = usePrograms()
     const workout = useWorkout(programsApi.days, programsApi.setDays)
-    const rotation = useRotation(programsApi.activeProgram)
+    const rotation = useRotation(programsApi.activeProgram, programsApi.programs, programsApi.days)
     const { toasts, showToast, removeToast } = useToast()
 
     return (
         <WorkoutContext.Provider value={{
             ...workout,
             ...rotation,
+            deleteDay: id => {
+                rotation.removeDay(id)
+                workout.deleteDay(id)
+            },
+            reorderDays: ids => {
+                rotation.anchorRotation()
+                workout.reorderDays(ids)
+            },
             toasts,
             showToast,
             removeToast,

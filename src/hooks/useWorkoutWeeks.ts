@@ -5,6 +5,7 @@ import {
     createTrainingWeekFromPrevious,
     getLatestTrainingWeek,
     shouldSuggestWeightIncrease,
+    incrementPreparedWeek,
 } from '../utils/helpers'
 import type { UpdateExerciseInDay } from './workoutTypes'
 
@@ -55,16 +56,15 @@ export function useWorkoutWeeks(days: WorkoutDay[], updateExerciseInDay: UpdateE
     }, [findExercise, updateExerciseInDay])
 
     const applyWeightIncrement = useCallback((dayId: string, exerciseId: string, weekId: string, increment: number) => {
-        updateExerciseInDay(dayId, exerciseId, exercise => ({
-            ...exercise,
-            weeks: exercise.weeks.map(week => week.id !== weekId ? week : {
-                ...week,
-                sets: week.sets.map(set => set.weight !== null
-                    ? { ...set, weight: Math.round((set.weight + increment) * 100) / 100 }
-                    : set
-                ),
-            }),
-        }))
+        updateExerciseInDay(dayId, exerciseId, exercise => {
+            if (getLatestTrainingWeek(exercise)?.id !== weekId) return exercise
+            return {
+                ...exercise,
+                weeks: exercise.weeks.map(week => week.id === weekId
+                    ? incrementPreparedWeek(week, increment)
+                    : week),
+            }
+        })
     }, [updateExerciseInDay])
 
     return { addWeek, deleteWeek, updateWeekLabel, addWeekFromPrevious, applyWeightIncrement }

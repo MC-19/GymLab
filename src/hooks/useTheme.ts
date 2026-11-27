@@ -3,7 +3,10 @@ import { useLocalStorage } from './useLocalStorage'
 import type { ThemeMode } from '../types'
 
 export function useTheme() {
-    const [theme, setTheme] = useLocalStorage<ThemeMode>('gymlab_theme', 'system')
+    const [theme, setTheme] = useLocalStorage<ThemeMode>('gymlab_theme', 'system', () => {
+        const stored = localStorage.getItem('gymlab_theme')?.replace(/"/g, '')
+        return stored === 'dark' || stored === 'light' ? stored : 'system'
+    })
 
     const applyTheme = useCallback((mode: ThemeMode) => {
         const root = document.documentElement

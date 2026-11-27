@@ -1,7 +1,15 @@
+import { localMonday, shiftLocalDay } from './dates'
 import type { Exercise, LoggedSet, TrainingWeek, WorkoutDay } from '../types'
 
 export function generateId(): string {
-    return crypto.randomUUID()
+    if (typeof crypto.randomUUID === 'function') return crypto.randomUUID()
+
+    // Mobile browsers on plain HTTP can provide random bytes without randomUUID.
+    const bytes = crypto.getRandomValues(new Uint8Array(16))
+    bytes[6] = (bytes[6] & 0x0f) | 0x40
+    bytes[8] = (bytes[8] & 0x3f) | 0x80
+    const hex = Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('')
+    return [hex.slice(0, 8), hex.slice(8, 12), hex.slice(12, 16), hex.slice(16, 20), hex.slice(20)].join('-')
 }
 
 export function findExercise(days: WorkoutDay[], dayId: string | undefined, exerciseId: string | undefined): Exercise | undefined {
@@ -31,17 +39,29 @@ export function createEmptyTrainingWeek(exercise: Exercise): TrainingWeek {
 }
 
 export function shouldSuggestWeightIncrease(week: TrainingWeek | undefined): boolean {
-    if (!week) return false
+    const effective = week?.sets.filter(set => set.type !== 'warmup' && set.type !== 'dropset') ?? []
+    if (!effective.length) return false
 
-    const completedSets = week.sets.filter(set => set.weight !== null && set.reps !== null)
-    if (completedSets.length === 0) return false
+    return effective.every(set =>
+        set.weight !== null && Number.isFinite(set.weight) && set.weight > 0
+        && set.reps !== null && Number.isInteger(set.reps) && set.reps > 0
+        && set.rir !== null && Number.isFinite(set.rir) && set.rir >= 2 && set.rir <= 10
+    )
+}
 
-    const setsWithRir = completedSets.filter(set => set.rir !== null)
-    const averageRir = setsWithRir.length > 0
-        ? setsWithRir.reduce((sum, set) => sum + set.rir!, 0) / setsWithRir.length
-        : null
-
-    return averageRir === null || averageRir <= 2
+/** Only advance prepared working sets, without touching anything already logged. */
+export function incrementPreparedWeek(week: TrainingWeek, increment: number): TrainingWeek {
+    if (!Number.isFinite(increment) || increment <= 0
+        || week.sets.some(set => set.reps !== null || set.rir !== null || !!set.notes)) return week
+    return {
+        ...week,
+        sets: week.sets.map(set => {
+            if (set.type === 'warmup' || set.type === 'dropset' || set.weight === null
+                || !Number.isFinite(set.weight) || set.weight <= 0) return set
+            const nextWeight = Math.round((set.weight + increment) * 100) / 100
+            return Number.isFinite(nextWeight) ? { ...set, weight: nextWeight } : set
+        }),
+    }
 }
 
 export function createTrainingWeekFromPrevious(exercise: Exercise): TrainingWeek {
@@ -84,20 +104,26 @@ export function getRelativeDate(iso: string): string {
 }
 
 export function copyWorkoutDay(day: WorkoutDay): WorkoutDay {
-    const copy: WorkoutDay = structuredClone(day)
-    copy.id = generateId()
-    copy.name = `${day.name} (copia)`
-    copy.createdAt = new Date().toISOString()
-    copy.exercises = copy.exercises.map(e => ({
-        ...e,
+    return {
         id: generateId(),
-        weeks: e.weeks.map(w => ({
-            ...w,
-            id: generateId(),
-            sets: w.sets.map(s => ({ ...s, id: generateId() })),
-        })),
-    }))
-    return copy
+        name: day.name,
+        order: day.order,
+        createdAt: new Date().toISOString(),
+        exercises: day.exercises.filter(exercise => !exercise.isDeleted).map(exercise => {
+            const latest = getLatestTrainingWeek(exercise)
+            return {
+                ...exercise,
+                id: generateId(),
+                weeks: latest?.sets.length ? [{
+                    id: generateId(),
+                    weekNumber: 1,
+                    sets: latest.sets.map(set => ({
+                        id: generateId(), type: set.type, weight: null, reps: null, rir: null,
+                    })),
+                }] : [],
+            }
+        }),
+    }
 }
 
 export function calcTotalVolume(sets: LoggedSet[]): number {
@@ -114,73 +140,31 @@ export function getCompletedSets(sets: LoggedSet[]): number {
     return sets.filter(s => s.weight !== null && s.reps !== null).length
 }
 
-/** Fórmula Epley: estima el 1RM a partir de peso y reps */
+/** Epley is an estimate for working sets of 1–10 reps, most useful near failure. */
 export function calc1RM(weight: number, reps: number): number {
-    if (reps <= 0) return 0
+    if (!Number.isFinite(weight) || weight <= 0 || !Number.isInteger(reps) || reps < 1 || reps > 10) return 0
     if (reps === 1) return weight
-    return Math.round(weight * (1 + reps / 30))
+    const estimate = Math.round(weight * (1 + reps / 30))
+    return Number.isFinite(estimate) ? estimate : 0
 }
 
-
-
-export function getMonday(dateString: string): Date {
-    const d = new Date(dateString)
-    const day = d.getDay()
-    const diff = day === 0 ? -6 : 1 - day
-    d.setDate(d.getDate() + diff)
-    d.setHours(0, 0, 0, 0)
-    return d
+export function getEstimated1RM(sets: LoggedSet[]): number {
+    return sets.reduce((best, set) => set.type === 'warmup'
+        ? best : Math.max(best, calc1RM(set.weight ?? 0, set.reps ?? 0)), 0)
 }
 
-export function calculateWeeklyStreak(sessions: { completedAt: string }[]): number {
-    if (sessions.length === 0) return 0
-
-    const mondays = new Set<number>()
-    for (const s of sessions) {
-        mondays.add(getMonday(s.completedAt).getTime())
-    }
-
-    const sortedMondays = Array.from(mondays).sort((a, b) => b - a)
-    if (sortedMondays.length === 0) return 0
-
-    const thisMonday = getMonday(new Date().toISOString()).getTime()
-    const msInWeek = 7 * 24 * 60 * 60 * 1000
-
-    // Si no ha entrenado ni esta semana ni la pasada, perdió la racha
-    if (sortedMondays[0] < thisMonday - msInWeek) {
-        return 0
-    }
-
+export function calculateWeeklyStreak(sessions: { completedAt: string }[], now = new Date()): number {
+    const mondays = new Set(sessions.flatMap(session => {
+        const date = new Date(session.completedAt)
+        return date <= now ? [localMonday(date).getTime()] : []
+    }))
+    let monday = localMonday(now)
+    if (!mondays.has(monday.getTime())) monday = shiftLocalDay(monday, -7)
     let streak = 0
-    let currentMondayToCheck = thisMonday
-
-    let index = 0
-    if (sortedMondays[0] === thisMonday) {
-        streak = 1
-        index = 1
-        currentMondayToCheck = thisMonday - msInWeek
-    } else if (sortedMondays[0] === thisMonday - msInWeek) {
-        // Entrenó la semana pasada pero aún no esta, la racha sigue viva
-        streak = 1
-        index = 1
-        currentMondayToCheck = thisMonday - 2 * msInWeek
+    while (mondays.has(monday.getTime())) {
+        streak++
+        monday = shiftLocalDay(monday, -7)
     }
-
-    for (let i = index; i < sortedMondays.length; i++) {
-        // Tolerancia de +- 2 horas por cambios de DST si fuera necesario, 
-        // pero setHours(0,0,0,0) con hora local ya suele cuadrar al usar ms exactos del mismo huso
-        // Para evitar bugs sutiles de DST, calculamos la diferencia en días en vez de ms exactos
-        const diffMs = currentMondayToCheck - sortedMondays[i]
-        const diffDays = Math.round(diffMs / (24 * 60 * 60 * 1000))
-
-        if (diffDays === 0) {
-            streak++
-            currentMondayToCheck -= msInWeek
-        } else {
-            break
-        }
-    }
-
     return streak
 }
 
@@ -212,7 +196,6 @@ export function getExerciseProgress(exercise: Exercise): WeekProgress[] {
             const maxWeight = effectiveCompleted.length > 0
                 ? Math.max(...effectiveCompleted.map(s => s.weight!))
                 : 0
-            const bestSet = effectiveCompleted.find(s => s.weight === maxWeight)
             const volume = calcTotalVolume(completed) // ya filtra warmups internamente
 
             let isPR = false
@@ -228,7 +211,7 @@ export function getExerciseProgress(exercise: Exercise): WeekProgress[] {
                 maxWeight,
                 totalVolume: volume,
                 totalSets: effectiveCompleted.length, // Mostrar # de series efectivas
-                estimated1RM: bestSet ? calc1RM(bestSet.weight!, bestSet.reps!) : 0,
+                estimated1RM: getEstimated1RM(week.sets),
                 isPR
             }
         })

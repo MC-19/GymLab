@@ -34,7 +34,11 @@ export function useWorkoutExercises(setDays: SetDays, updateExerciseInDay: Updat
         setDays(previous => previous.map(day => {
             if (day.id !== dayId) return day
             const exercisesById = new Map(day.exercises.map(exercise => [exercise.id, exercise]))
-            return { ...day, exercises: orderedIds.map(id => exercisesById.get(id)!) }
+            const ids = [...new Set([...orderedIds, ...exercisesById.keys()])]
+            return { ...day, exercises: ids.flatMap(id => {
+                const exercise = exercisesById.get(id)
+                return exercise ? [exercise] : []
+            }) }
         }))
     }, [setDays])
 

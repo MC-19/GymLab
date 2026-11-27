@@ -36,6 +36,7 @@ export interface TrainingWeek {
 }
 
 export interface Exercise {
+    isDeleted?: boolean
     id: string
     name: string
     muscleGroup?: MuscleGroup | string
@@ -45,6 +46,7 @@ export interface Exercise {
 }
 
 export interface WorkoutDay {
+    isDeleted?: boolean
     id: string
     name: string
     exercises: Exercise[]
@@ -54,6 +56,7 @@ export interface WorkoutDay {
 
 /** Un bloque/programa de entrenamiento que agrupa varios días */
 export interface TrainingProgram {
+    isDeleted?: boolean
     id: string
     name: string
     createdAt: string
@@ -88,5 +91,6 @@ export interface CompletedSession {
 export interface WorkoutState {
     version: 2
     currentDayIndexByProgram: Record<string, number>
+    currentDayIdByProgram?: Record<string, string>
     sessions: CompletedSession[]   // historial completo de sesiones
 }

@@ -1,23 +1,31 @@
 import { useCallback } from 'react'
 import { useLocalStorage } from '../../hooks/useLocalStorage'
+import { localDateKey } from '../../utils/dates'
+import { getWeightSummary } from './weightDates'
+import { isBodyWeightEntry } from '../../utils/backup'
 import { generateId } from '../../utils/helpers'
 import type { BodyWeightEntry } from './types'
 
 const STORAGE_KEY = 'gymlab_bodyweight'
 
-function todayStr(): string {
-    return new Date().toISOString().slice(0, 10)
-}
-
 export function useBodyWeight() {
-    const [entries, setEntries] = useLocalStorage<BodyWeightEntry[]>(STORAGE_KEY, [])
+    const [entries, setEntries] = useLocalStorage<BodyWeightEntry[]>(STORAGE_KEY, [], () => {
+        const raw = localStorage.getItem(STORAGE_KEY)
+        if (raw === null) return []
+        const stored: unknown = JSON.parse(raw)
+        if (!Array.isArray(stored) || !stored.every(isBodyWeightEntry)) throw new Error('Pesos guardados inválidos')
+        return stored
+    })
 
     /**
      * Añade o actualiza la entrada del día indicado.
      * Si `date` se omite, usa la fecha de hoy.
      */
     const addOrUpdateEntry = useCallback(
-        (weight: number, date: string = todayStr()) => {
+        (weight: number, date: string = localDateKey()) => {
+            if (!Number.isFinite(weight) || weight <= 0 || !/^\d{4}-\d{2}-\d{2}$/.test(date) || date > localDateKey()) return
+            const [year, month, day] = date.split('-').map(Number)
+            if (localDateKey(new Date(year, month - 1, day)) !== date) return
             setEntries(prev => {
                 const exists = prev.some(e => e.date === date)
                 const updated = exists
@@ -34,35 +42,11 @@ export function useBodyWeight() {
         [setEntries],
     )
 
-    // --- Derived values ---
-
-    /** Peso del día de hoy (si existe) */
-    const todayEntry = entries.find(e => e.date === todayStr())
-
-    /** Último peso registrado (más reciente) */
-    const lastEntry = entries.length > 0 ? entries[entries.length - 1] : null
-
-    /** Diferencia respecto a hace ~7 días (entrada más cercana entre 5-9 días atrás) */
-    const sevenDaysAgo = (() => {
-        const d = new Date()
-        d.setDate(d.getDate() - 7)
-        return d.toISOString().slice(0, 10)
-    })()
-    const weekAgoEntry = [...entries]
-        .reverse()
-        .find(e => e.date <= sevenDaysAgo) ?? null
-
-    const weekDelta =
-        lastEntry && weekAgoEntry && lastEntry.id !== weekAgoEntry.id
-            ? Math.round((lastEntry.weight - weekAgoEntry.weight) * 10) / 10
-            : null
+    const sortedEntries = entries.slice().sort((a, b) => a.date.localeCompare(b.date))
 
     return {
-        /** Entradas ordenadas por fecha ascendente */
-        entries,
-        todayEntry,
-        lastEntry,
-        weekDelta,
+        entries: sortedEntries,
+        ...getWeightSummary(sortedEntries),
         addOrUpdateEntry,
         deleteEntry,
     }

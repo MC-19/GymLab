@@ -1,3 +1,4 @@
+import { getActiveDays } from '../hooks/usePrograms'
 import { Archive, CheckCircle2, ChevronRight, Dumbbell, FolderOpen, Pencil, Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -27,8 +28,8 @@ export function ProgramsPage() {
     const [archiveTarget, setArchiveTarget] = useState<string | null>(null)
     const [showArchived, setShowArchived] = useState(false)
 
-    const activePrograms = programs.filter(p => !p.isArchived)
-    const archivedPrograms = programs.filter(p => p.isArchived)
+    const activePrograms = programs.filter(p => !p.isArchived && !p.isDeleted)
+    const archivedPrograms = programs.filter(p => p.isArchived && !p.isDeleted)
 
     const handleCreate = () => {
         const name = newName.trim()
@@ -64,6 +65,7 @@ export function ProgramsPage() {
 
     const ProgramCard = ({ program, archived = false }: { program: typeof programs[0]; archived?: boolean }) => {
         const isActive = program.id === activeProgramId
+        const routineDays = getActiveDays(program)
         return (
             <div className={[
                 'border rounded-3xl overflow-hidden transition-all duration-200',
@@ -104,8 +106,8 @@ export function ProgramsPage() {
                                 </div>
                             </div>
                             <p className="text-xs text-gray-500 dark:text-gray-500 mt-0.5">
-                                {program.days.length} día{program.days.length !== 1 ? 's' : ''} ·{' '}
-                                {program.days.reduce((s, d) => s + d.exercises.length, 0)} ejercicios
+                                {routineDays.length} día{routineDays.length !== 1 ? 's' : ''} ·{' '}
+                                {routineDays.reduce((s, d) => s + d.exercises.length, 0)} ejercicios
                             </p>
                         </div>
                     </div>
@@ -148,7 +150,7 @@ export function ProgramsPage() {
                         )
                     )}
 
-                    {!archived && !isActive && (
+                    {!archived && (
                         <button
                             onClick={() => setArchiveTarget(program.id)}
                             aria-label={`Archivar ${program.name}`}
@@ -189,7 +191,7 @@ export function ProgramsPage() {
                         : `${activePrograms.length} programa${activePrograms.length !== 1 ? 's' : ''} activos`}
                 </p>
 
-                {programs.length === 0 ? (
+                {activePrograms.length + archivedPrograms.length === 0 ? (
                     <EmptyState
                         icon={<Dumbbell size={28} />}
                         title="Sin programas"
@@ -287,7 +289,7 @@ export function ProgramsPage() {
             <Modal open={deleteTarget !== null} onClose={() => setDeleteTarget(null)} title="¿Eliminar programa?">
                 <div className="space-y-4">
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Se eliminarán todos los días, ejercicios y series de este programa. Esta acción <strong>no se puede deshacer</strong>.
+                        El programa dejará de aparecer en Programas. Sus registros seguirán disponibles en Progresión.
                     </p>
                     <div className="flex gap-3">
                         <Button variant="ghost" fullWidth onClick={() => setDeleteTarget(null)}>Cancelar</Button>
