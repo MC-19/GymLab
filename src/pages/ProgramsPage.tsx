@@ -9,6 +9,7 @@ import { Input } from '../components/ui/Input'
 import { Modal } from '../components/ui/Modal'
 import { ThemeToggle } from '../components/ui/ThemeToggle'
 import { useWorkoutContext } from '../context/WorkoutContext'
+import { PageHeader } from '../components/layout/PageHeader'
 
 export function ProgramsPage() {
     const navigate = useNavigate()
@@ -183,16 +184,15 @@ export function ProgramsPage() {
     }
 
     return (
-        <div className="page-enter">
-            {/* Header */}
-            <div className="sticky top-0 z-30 bg-white/80 dark:bg-black/80 backdrop-blur-xl border-b border-gray-100/60 dark:border-white/8">
+        <div>
+            <PageHeader>
                 <div className="flex items-center justify-between px-5 h-14 max-w-lg mx-auto">
                     <h1 className="text-base font-bold text-gray-900 dark:text-white">Programas</h1>
                     <ThemeToggle />
                 </div>
-            </div>
+            </PageHeader>
 
-            <div className="px-5 pt-6 pb-24 max-w-lg mx-auto">
+            <div className="page-enter px-5 pt-6 pb-24 max-w-lg mx-auto">
                 <p className="text-sm text-gray-500 dark:text-gray-500 mb-5">
                     {activePrograms.length === 0
                         ? 'Crea tu primer bloque de entrenamiento'

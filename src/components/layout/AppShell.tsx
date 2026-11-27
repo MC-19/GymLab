@@ -13,7 +13,7 @@ export function AppShell({ children, training = false }: AppShellProps) {
 
     return (
         <div className={`min-h-dvh bg-white dark:bg-black flex flex-col text-gray-900 dark:text-white ${training ? 'training-shell' : ''}`}>
-            <main className={`flex-1 pb-24 ${training ? '' : 'overflow-y-auto'}`}>
+            <main className="min-w-0 flex-1 overflow-x-clip pb-24">
                 {children}
             </main>
             {training ? <div className="training-bottom-nav"><BottomNav /></div> : <BottomNav />}

@@ -10,6 +10,7 @@ import { Modal } from '../components/ui/Modal'
 import { ThemeToggle } from '../components/ui/ThemeToggle'
 import { useWorkoutContext } from '../context/WorkoutContext'
 import { getActiveDays } from '../hooks/usePrograms'
+import { PageHeader } from '../components/layout/PageHeader'
 
 export function RoutinesPage() {
     const navigate = useNavigate()
@@ -107,16 +108,15 @@ export function RoutinesPage() {
     const currentDay = getCurrentDay(days)
 
     return (
-        <div className="page-enter">
-            {/* Header */}
-            <div className="sticky top-0 z-30 bg-white/80 dark:bg-black/80 backdrop-blur-xl border-b border-gray-100/60 dark:border-white/8">
+        <div>
+            <PageHeader>
                 <div className="flex items-center justify-between px-5 h-14 max-w-lg mx-auto">
-                    <div>
+                    <div className="min-w-0">
                         <h1 className="text-base font-bold text-gray-900 dark:text-white">Rutinas</h1>
                         {activeProgram && (
                             <button
                                 onClick={() => navigate('/programs')}
-                                className="text-xs text-blue-600 dark:text-blue-400 font-medium leading-none"
+                                className="max-w-full truncate text-left text-xs text-blue-600 dark:text-blue-400 font-medium leading-none"
                             >
                                 {activeProgram.name} →
                             </button>
@@ -124,9 +124,9 @@ export function RoutinesPage() {
                     </div>
                     <ThemeToggle />
                 </div>
-            </div>
+            </PageHeader>
 
-            <div className="px-5 pt-6 pb-24 max-w-lg mx-auto">
+            <div className="page-enter px-5 pt-6 pb-24 max-w-lg mx-auto">
                 {/* Subtitle */}
                 <p className="text-sm text-gray-500 dark:text-gray-500 mb-5">
                     {days.length === 0

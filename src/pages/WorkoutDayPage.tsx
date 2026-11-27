@@ -20,6 +20,7 @@ import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import type { Exercise, MuscleGroup } from '../types'
 import { getCompletedSets } from '../utils/helpers'
 import { normalizeString } from '../utils/stringUtils'
+import { PageHeader } from '../components/layout/PageHeader'
 
 const MUSCLE_GROUPS: MuscleGroup[] = [
     'Pecho', 'Espalda', 'Hombros', 'Bíceps', 'Tríceps',
@@ -123,9 +124,8 @@ export function WorkoutDayPage() {
     }
 
     return (
-        <div className="page-enter">
-            {/* Header */}
-            <div className="sticky top-0 z-30 bg-white/80 dark:bg-black/80 backdrop-blur-xl border-b border-gray-100/60 dark:border-white/8">
+        <div>
+            <PageHeader>
                 <div className="flex items-center gap-3 px-4 h-14 max-w-lg mx-auto">
                     <IconButton onClick={() => navigate('/')} variant="ghost" aria-label="Volver a Inicio">
                         <ChevronLeft size={22} />
@@ -142,19 +142,19 @@ export function WorkoutDayPage() {
                             />
                         ) : (
                             <button
-                                className="flex items-center gap-1.5 text-left group"
+                                className="group flex max-w-full items-center gap-1.5 text-left"
                                 onClick={() => { setDayNameInput(day.name); setEditDayName(true) }}
                             >
                                 <h1 className="text-base font-bold text-gray-900 dark:text-white truncate">{day.name}</h1>
-                                <Pencil size={12} className="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                <Pencil size={12} className="shrink-0 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
                             </button>
                         )}
                     </div>
                     <ThemeToggle />
                 </div>
-            </div>
+            </PageHeader>
 
-            <div className="px-5 pt-5 pb-4 max-w-lg mx-auto">
+            <div className="page-enter px-5 pt-5 pb-4 max-w-lg mx-auto">
                 {/* Summary bar */}
                 <div className="flex items-center gap-4 mb-5 bg-gray-50 dark:bg-white/5 rounded-3xl px-4 py-3 border border-gray-200/60 dark:border-white/8">
                     <div className="text-center">

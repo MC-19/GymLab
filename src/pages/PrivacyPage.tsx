@@ -1,14 +1,16 @@
 import { ArrowLeft, Database, ExternalLink, ShieldCheck } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
+import { PageHeader } from '../components/layout/PageHeader'
+import { ThemeToggle } from '../components/ui/ThemeToggle'
 
 export function PrivacyPage() {
     const navigate = useNavigate()
     useDocumentTitle('Privacidad y cookies — GymLab')
 
     return (
-        <div className="page-enter">
-            <header className="sticky top-0 z-30 border-b border-gray-100/60 bg-white/80 backdrop-blur-xl dark:border-white/8 dark:bg-black/80">
+        <div>
+            <PageHeader>
                 <div className="mx-auto flex h-14 max-w-lg items-center gap-3 px-5">
                     <button
                         type="button"
@@ -18,11 +20,12 @@ export function PrivacyPage() {
                     >
                         <ArrowLeft size={18} />
                     </button>
-                    <h1 className="text-base font-bold text-gray-900 dark:text-white">Privacidad y cookies</h1>
+                    <h1 className="min-w-0 flex-1 text-base font-bold leading-tight text-gray-900 dark:text-white">Privacidad y cookies</h1>
+                    <ThemeToggle />
                 </div>
-            </header>
+            </PageHeader>
 
-            <main className="mx-auto max-w-lg space-y-6 px-5 pb-28 pt-6 text-sm leading-relaxed text-gray-600 dark:text-gray-400">
+            <main className="page-enter mx-auto max-w-lg space-y-6 px-5 pb-28 pt-6 text-sm leading-relaxed text-gray-600 dark:text-gray-400">
                 <div className="rounded-3xl border border-blue-200/60 bg-blue-50 p-5 dark:border-blue-500/20 dark:bg-blue-500/8">
                     <div className="flex items-center gap-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-500/15 text-blue-600 dark:text-blue-400">

@@ -1,6 +1,8 @@
 import { Link, useParams } from 'react-router-dom'
-import { ChevronRight, Trophy } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Trophy } from 'lucide-react'
 import { HistoryNavigation } from '../../components/layout/HistoryNavigation'
+import { PageHeader } from '../../components/layout/PageHeader'
+import { ThemeToggle } from '../../components/ui/ThemeToggle'
 import { useTraining } from './TrainingContext'
 import { goalLabel } from '../programs/goals'
 import { summarizeSession } from './session'
@@ -55,46 +57,53 @@ export function SessionHistoryPage() {
     }
 
     return (
-        <div className="mx-auto max-w-lg px-5 pt-5 pb-8 space-y-4">
-            <Link to="/history" className="inline-flex items-center min-h-11 text-sm text-blue-700 dark:text-blue-400">
-                Volver a sesiones
-            </Link>
-            <h1 className="text-2xl font-bold">{session ? session.dayName : 'Sesiones de entrenamiento'}</h1>
-            {loading || error ? <p className="text-sm text-gray-500">{error ?? 'Cargando sesiones…'}</p> : session && summary ? (
-                <>
-                    <p className="text-sm text-gray-500">{session.programName} · {new Date(session.completedAt!).toLocaleString('es-ES')}</p>
-                    <dl className="grid grid-cols-2 gap-2 rounded-2xl bg-gray-50 dark:bg-white/5 p-4">
-                        {[
-                            ['Duración', durationLabel(summary.duration)],
-                            ['Ejercicios', summary.exercises],
-                            ['Series', summary.sets],
-                            ['Volumen efectivo', `${summary.volume.toLocaleString('es-ES', { maximumFractionDigits: 2 })} kg`],
-                        ].map(([label, value]) => (
-                            <div key={label}><dt className="text-xs text-gray-500">{label}</dt><dd className="font-semibold">{value}</dd></div>
+        <div>
+            <PageHeader>
+                <div className="mx-auto flex min-h-14 max-w-lg items-center gap-2 px-4">
+                    <Link to="/history" aria-label="Volver a sesiones" className="grid size-11 shrink-0 place-items-center rounded-xl text-blue-700 focus-visible:outline-2 focus-visible:outline-blue-500 dark:text-blue-400">
+                        <ChevronLeft size={22} aria-hidden="true" />
+                    </Link>
+                    <h1 className="min-w-0 flex-1 truncate font-bold">{session?.dayName ?? 'Sesiones de entrenamiento'}</h1>
+                    <ThemeToggle />
+                </div>
+            </PageHeader>
+            <div className="mx-auto max-w-lg px-5 pt-5 pb-8 space-y-4">
+                {loading || error ? <p className="text-sm text-gray-500">{error ?? 'Cargando sesiones…'}</p> : session && summary ? (
+                    <>
+                        <p className="text-sm text-gray-500">{session.programName} · {new Date(session.completedAt!).toLocaleString('es-ES')}</p>
+                        <dl className="grid grid-cols-2 gap-2 rounded-2xl bg-gray-50 dark:bg-white/5 p-4">
+                            {[
+                                ['Duración', durationLabel(summary.duration)],
+                                ['Ejercicios', summary.exercises],
+                                ['Series', summary.sets],
+                                ['Volumen efectivo', `${summary.volume.toLocaleString('es-ES', { maximumFractionDigits: 2 })} kg`],
+                            ].map(([label, value]) => (
+                                <div key={label}><dt className="text-xs text-gray-500">{label}</dt><dd className="font-semibold">{value}</dd></div>
+                            ))}
+                        </dl>
+                        {session.exercises.map(exercise => (
+                            <section key={exercise.id} className="rounded-2xl border border-gray-200 dark:border-white/10 p-4 space-y-2">
+                                <h2 className="font-semibold">{exercise.name}</h2>
+                                {exercise.goals && <p className="text-xs text-gray-500">Objetivo de la sesión · {goalLabel(exercise.goals)}</p>}
+                                {session.records.includes(exercise.id) && (
+                                    <p className="flex items-center gap-2 text-sm text-amber-700 dark:text-amber-400">
+                                        <Trophy size={16} /> Récord de peso
+                                    </p>
+                                )}
+                                <ol className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
+                                    {exercise.sets.map((set, index) => (
+                                        <li key={set.id}>
+                                            {index + 1}. {set.weight} kg × {set.reps} reps{set.rir !== null ? ` · RIR ${set.rir}` : ''}
+                                            {set.type === 'warmup' ? ' · Calentamiento' : set.type === 'dropset' ? ' · Dropset' : ''}
+                                        </li>
+                                    ))}
+                                </ol>
+                            </section>
                         ))}
-                    </dl>
-                    {session.exercises.map(exercise => (
-                        <section key={exercise.id} className="rounded-2xl border border-gray-200 dark:border-white/10 p-4 space-y-2">
-                            <h2 className="font-semibold">{exercise.name}</h2>
-                            {exercise.goals && <p className="text-xs text-gray-500">Objetivo de la sesión · {goalLabel(exercise.goals)}</p>}
-                            {session.records.includes(exercise.id) && (
-                                <p className="flex items-center gap-2 text-sm text-amber-700 dark:text-amber-400">
-                                    <Trophy size={16} /> Récord de peso
-                                </p>
-                            )}
-                            <ol className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
-                                {exercise.sets.map((set, index) => (
-                                    <li key={set.id}>
-                                        {index + 1}. {set.weight} kg × {set.reps} reps{set.rir !== null ? ` · RIR ${set.rir}` : ''}
-                                        {set.type === 'warmup' ? ' · Calentamiento' : set.type === 'dropset' ? ' · Dropset' : ''}
-                                    </li>
-                                ))}
-                            </ol>
-                        </section>
-                    ))}
-                    <Link to="/" className="inline-flex min-h-11 items-center text-sm font-semibold text-blue-600 dark:text-blue-400">Volver a Inicio</Link>
-                </>
-            ) : <p className="text-sm text-gray-600 dark:text-gray-400">No se encontró esta sesión.</p>}
+                        <Link to="/" className="inline-flex min-h-11 items-center text-sm font-semibold text-blue-600 dark:text-blue-400">Volver a Inicio</Link>
+                    </>
+                ) : <p className="text-sm text-gray-600 dark:text-gray-400">No se encontró esta sesión.</p>}
+            </div>
         </div>
     )
 }

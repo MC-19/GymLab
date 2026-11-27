@@ -14,6 +14,7 @@ import { EXERCISE_CATALOG } from '../data/exerciseCatalog'
 import type { TrainingWeek } from '../types'
 import { calcTotalVolume, getCompletedSets, getExerciseProgress } from '../utils/helpers'
 import { normalizeString } from '../utils/stringUtils'
+import { PageHeader } from '../components/layout/PageHeader'
 
 export function ExercisePage() {
     const { dayId, exerciseId } = useParams<{ dayId: string; exerciseId: string }>()
@@ -106,9 +107,8 @@ export function ExercisePage() {
         : 0
 
     return (
-        <div className="page-enter">
-            {/* Header */}
-            <div className="sticky top-0 z-30 bg-white/80 dark:bg-black/80 backdrop-blur-xl border-b border-gray-100/60 dark:border-white/8">
+        <div>
+            <PageHeader>
                 <div className="flex items-center gap-3 px-4 h-14 max-w-lg mx-auto">
                     <IconButton onClick={() => navigate(`/day/${day.id}`)} variant="ghost">
                         <ChevronLeft size={22} />
@@ -121,9 +121,9 @@ export function ExercisePage() {
                     </div>
                     <ThemeToggle />
                 </div>
-            </div>
+            </PageHeader>
 
-            <div className="flex-1 px-5 pt-5 pb-8 max-w-lg mx-auto w-full space-y-4">
+            <div className="page-enter flex-1 px-5 pt-5 pb-8 max-w-lg mx-auto w-full space-y-4">
 
                 {/* ── BOTON VER TECNICA ────────────────────────────────── */}
                 {catalogEntry && (catalogEntry.gifUrl || catalogEntry.imageUrl) && (

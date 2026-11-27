@@ -5,6 +5,7 @@ import { useWorkoutContext } from '../context/WorkoutContext'
 import { useTimer } from '../context/TimerContext'
 import { Button } from '../components/ui/Button'
 import { Modal } from '../components/ui/Modal'
+import { ThemeToggleButton } from '../components/ui/ThemeToggle'
 import type { ThemeMode } from '../types'
 import { backupToStorage, parseBackup, readGymLabStorage } from '../utils/backup'
 import { getStorageErrorMessage, isStorageQuotaError } from '../services/storageErrors'
@@ -13,6 +14,7 @@ import { trainingRepository } from '../features/training/repository'
 import { useAnalyticsConsent } from '../hooks/useAnalyticsConsent'
 import { generateId } from '../utils/helpers'
 import { Link } from 'react-router-dom'
+import { PageHeader } from '../components/layout/PageHeader'
 
 const themeOptions: { value: ThemeMode; label: string; icon: React.ReactNode }[] = [
     { value: 'system', label: 'Sistema', icon: <Monitor size={18} /> },
@@ -21,7 +23,7 @@ const themeOptions: { value: ThemeMode; label: string; icon: React.ReactNode }[]
 ]
 
 export function SettingsPage() {
-    const { theme, setTheme } = useTheme()
+    const { theme, setTheme, toggleTheme } = useTheme()
     const { days, showToast } = useWorkoutContext()
     const { defaultRestTime, setDefaultRestTime, stopTimer } = useTimer()
     const { consent, acceptAnalytics, rejectAnalytics } = useAnalyticsConsent()
@@ -138,11 +140,12 @@ export function SettingsPage() {
 
     return (
         <div>
-            <header className="border-b border-gray-100/60 bg-white pt-[env(safe-area-inset-top)] dark:border-white/8 dark:bg-black">
-                <div className="flex items-center px-5 h-14 max-w-lg mx-auto">
+            <PageHeader>
+                <div className="flex h-14 max-w-lg items-center justify-between px-5 mx-auto">
                     <h1 className="text-base font-bold text-gray-900 dark:text-white">Ajustes</h1>
+                    <ThemeToggleButton theme={theme} onToggle={toggleTheme} />
                 </div>
-            </header>
+            </PageHeader>
 
             <div className="page-enter px-5 pt-5 pb-8 max-w-lg mx-auto space-y-6">
 
@@ -153,6 +156,7 @@ export function SettingsPage() {
                             <button
                                 key={opt.value}
                                 onClick={() => setTheme(opt.value)}
+                                aria-pressed={theme === opt.value}
                                 className={[
                                     'flex-1 flex flex-col items-center gap-2 py-3 px-2 rounded-2xl border text-xs font-medium transition-all duration-150',
                                     theme === opt.value
