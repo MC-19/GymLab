@@ -11,6 +11,7 @@ import { ThemeToggle } from '../components/ui/ThemeToggle'
 import { calcTotalVolume, getCompletedSets, getEstimated1RM } from '../utils/helpers'
 import { useTimer } from '../context/TimerContext'
 import type { LoggedSet, SetType } from '../types'
+import { PageHeader } from '../components/layout/PageHeader'
 
 export function WeekPage() {
     const { dayId, exerciseId, weekId } = useParams<{
@@ -78,9 +79,8 @@ export function WeekPage() {
     }
 
     return (
-        <div className="page-enter">
-            {/* Header */}
-            <div className="sticky top-0 z-30 bg-white/80 dark:bg-black/80 backdrop-blur-xl border-b border-gray-100/60 dark:border-white/8">
+        <div>
+            <PageHeader>
                 <div className="flex items-center gap-3 px-4 h-14 max-w-lg mx-auto">
                     <IconButton onClick={() => navigate(`/day/${day.id}/exercise/${exercise.id}`)} variant="ghost">
                         <ChevronLeft size={22} />
@@ -89,13 +89,13 @@ export function WeekPage() {
                         <h1 className="text-base font-bold text-gray-900 dark:text-white truncate">
                             {week.label ?? `Semana ${week.weekNumber}`}
                         </h1>
-                        <span className="text-xs text-gray-500 dark:text-gray-500">{exercise.name}</span>
+                        <span className="truncate text-xs text-gray-500 dark:text-gray-500">{exercise.name}</span>
                     </div>
                     <ThemeToggle />
                 </div>
-            </div>
+            </PageHeader>
 
-            <div className="flex-1 px-5 pt-5 pb-8 max-w-lg mx-auto w-full">
+            <div className="page-enter flex-1 px-5 pt-5 pb-8 max-w-lg mx-auto w-full">
                 {/* Stats bar */}
                 <div className="mb-5 bg-gray-50 dark:bg-white/5 rounded-3xl px-5 py-4 border border-gray-200/60 dark:border-white/8">
                     <div className="flex items-center justify-between mb-3">

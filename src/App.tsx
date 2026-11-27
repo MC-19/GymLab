@@ -1,22 +1,23 @@
-import { TrainingPage } from './features/training/TrainingPage'
-import { SessionHistoryPage } from './features/training/SessionHistoryPage'
 import { useLayoutEffect } from 'react'
-import { Routes, Route, useLocation, useMatch, useNavigationType } from 'react-router-dom'
+import { Route, Routes, useLocation, useMatch, useNavigationType } from 'react-router-dom'
 import { AppShell } from './components/layout/AppShell'
-import { Dashboard } from './pages/Dashboard'
-import { WorkoutDayPage } from './pages/WorkoutDayPage'
-import { ExercisePage } from './pages/ExercisePage'
-import { WeekPage } from './pages/WeekPage'
-import { HistoryPage } from './pages/HistoryPage'
-import { SettingsPage } from './pages/SettingsPage'
-import { RoutinesPage } from './pages/RoutinesPage'
-import { ProgramsPage } from './pages/ProgramsPage'
-import { BodyWeightPage } from './features/bodyweight/components/BodyWeightPage'
-import { TimerWidget } from './components/ui/TimerWidget'
-import { PwaReloadPrompt } from './components/ui/PwaReloadPrompt'
 import { AnalyticsConsentBanner } from './components/ui/AnalyticsConsentBanner'
-import { PrivacyPage } from './pages/PrivacyPage'
+import { PwaReloadPrompt } from './components/ui/PwaReloadPrompt'
 import { StorageErrorNotifier } from './components/ui/StorageErrorNotifier'
+import { TimerWidget } from './components/ui/TimerWidget'
+import { VercelAnalytics } from './components/ui/VercelAnalytics'
+import { BodyWeightPage } from './features/bodyweight/components/BodyWeightPage'
+import { SessionHistoryPage } from './features/training/SessionHistoryPage'
+import { TrainingPage } from './features/training/TrainingPage'
+import { Dashboard } from './pages/Dashboard'
+import { ExercisePage } from './pages/ExercisePage'
+import { HistoryPage } from './pages/HistoryPage'
+import { PrivacyPage } from './pages/PrivacyPage'
+import { ProgramsPage } from './pages/ProgramsPage'
+import { RoutinesPage } from './pages/RoutinesPage'
+import { SettingsPage } from './pages/SettingsPage'
+import { WeekPage } from './pages/WeekPage'
+import { WorkoutDayPage } from './pages/WorkoutDayPage'
 
 export default function App() {
   const isTraining = useMatch('/training') !== null
@@ -31,6 +32,7 @@ export default function App() {
     <AppShell training={isTraining}>
       <PwaReloadPrompt />
       <AnalyticsConsentBanner />
+      <VercelAnalytics />
       <StorageErrorNotifier />
       {!isTraining && <TimerWidget />}
       <Routes>

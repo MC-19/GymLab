@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { AlertCircle, ArrowLeft, Check, ChevronDown, LoaderCircle, Plus } from 'lucide-react'
+import { PageHeader } from '../../components/layout/PageHeader'
 import { Button } from '../../components/ui/Button'
+import { ThemeToggle } from '../../components/ui/ThemeToggle'
 import { TimerWidget } from '../../components/ui/TimerWidget'
 import { Modal } from '../../components/ui/Modal'
 import { getStorageErrorMessage, isStorageQuotaError } from '../../services/storageErrors'
@@ -143,11 +145,18 @@ export function TrainingPage() {
 
     if (!active || error) {
         return (
-            <div className="mx-auto max-w-lg px-5 py-8 space-y-4">
-                <h1 className="text-xl font-bold">Entrenamiento</h1>
-                <p className="text-sm text-gray-500">{error ?? (loading ? 'Buscando tu entrenamiento…' : 'No hay un entrenamiento activo.')}</p>
-                <Link to="/" className="text-sm font-semibold text-blue-600 dark:text-blue-400">Volver a Inicio</Link>
-            </div>
+            <>
+                <PageHeader>
+                    <div className="mx-auto flex h-14 max-w-lg items-center justify-between gap-2 px-5">
+                        <h1 className="font-bold">Entrenamiento</h1>
+                        <ThemeToggle />
+                    </div>
+                </PageHeader>
+                <div className="mx-auto max-w-lg px-5 py-8 space-y-4">
+                    <p className="text-sm text-gray-500">{error ?? (loading ? 'Buscando tu entrenamiento…' : 'No hay un entrenamiento activo.')}</p>
+                    <Link to="/" className="text-sm font-semibold text-blue-600 dark:text-blue-400">Volver a Inicio</Link>
+                </div>
+            </>
         )
     }
 
@@ -175,12 +184,15 @@ export function TrainingPage() {
     }
 
     return (
-        <div key={active.id} className="mx-auto max-w-lg space-y-4 px-3.5 pt-4 pb-8 sm:px-5">
-            <header className="min-w-0 px-0.5">
-                <p className="break-words text-sm font-medium text-gray-600 dark:text-gray-400">{active.programName}</p>
-                <h1 className="break-words text-2xl font-bold">{active.dayName}</h1>
-            </header>
-            <div className="training-status sticky top-0 z-30 -mx-3.5 space-y-1.5 border-b border-gray-200/80 bg-white/95 px-3.5 pb-2 pt-[env(safe-area-inset-top)] backdrop-blur-xl dark:border-white/10 dark:bg-black/95 sm:-mx-5 sm:px-5">
+        <div key={active.id} className="mx-auto max-w-lg space-y-4 px-3.5 pb-8 sm:px-5">
+            <header className="training-status sticky top-0 z-30 -mx-3.5 space-y-1.5 border-b border-gray-200/80 bg-white/95 px-3.5 pb-2 pt-[env(safe-area-inset-top)] backdrop-blur-xl dark:border-white/10 dark:bg-black/95 sm:-mx-5 sm:px-5">
+                <div className="flex min-w-0 items-center justify-between gap-2 pt-1">
+                    <div className="min-w-0">
+                        <p className="truncate text-xs font-medium text-gray-600 dark:text-gray-400">{active.programName}</p>
+                        <h1 className="truncate text-lg font-bold leading-tight">{active.dayName}</h1>
+                    </div>
+                    <ThemeToggle />
+                </div>
                 <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-2">
                     <Link to="/" aria-label="Salir y continuar luego" className="inline-flex min-h-11 items-center gap-1.5 rounded-lg text-sm font-semibold text-blue-700 focus-visible:outline-2 focus-visible:outline-blue-500 dark:text-blue-400">
                         <ArrowLeft size={16} aria-hidden="true" />
@@ -199,7 +211,7 @@ export function TrainingPage() {
                 </div>
                 <TimerWidget placement="training" />
                 {message && <p role="alert" className="rounded-xl bg-red-50 p-2 text-sm text-red-800 dark:bg-red-950 dark:text-red-200">{message}</p>}
-            </div>
+            </header>
             {active.exercises.map(exercise => {
                 const previous = previousExercise(exercise, history)
                 const goals = exercise.goals

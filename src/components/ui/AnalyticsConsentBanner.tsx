@@ -19,7 +19,7 @@ export function AnalyticsConsentBanner() {
                 <div>
                     <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Analítica y privacidad</h2>
                     <p className="mt-1 text-xs leading-relaxed text-gray-600 dark:text-gray-400">
-                        Nos gustaría medir visitas para mejorar GymLab. Tus rutinas, pesos, notas y series no se envían a Google Analytics.
+                        Nos gustaría medir visitas con Google Analytics y Vercel Web Analytics. Tus rutinas, pesos, notas y series se quedan en tu dispositivo.
                     </p>
                     <Link to="/privacy" className="mt-1.5 inline-block text-xs font-medium text-blue-600 underline underline-offset-2 dark:text-blue-400">
                         Más información

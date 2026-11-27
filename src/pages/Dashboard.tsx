@@ -11,6 +11,7 @@ import { useTimer } from '../context/TimerContext'
 import { useWorkoutContext } from '../context/WorkoutContext'
 import { LATEST_VERSION } from '../data/changelog'
 import { calculateWeeklyStreak } from '../utils/helpers'
+import { PageHeader } from '../components/layout/PageHeader'
 
 import { localDateKey, localMonday, sessionDates, shiftLocalDay } from '../utils/dates'
 
@@ -76,7 +77,7 @@ export function Dashboard() {
 
     return (
         <div>
-            <header className="border-b border-gray-100/60 bg-white pt-[env(safe-area-inset-top)] dark:border-white/8 dark:bg-black">
+            <PageHeader>
                 <div className="flex items-center justify-between px-5 h-14 max-w-lg mx-auto">
                     <div className="shrink-0" aria-label="GymLab">
                         <img src="/brand/gymlab-logo-light.svg" alt="GymLab" className="h-9 w-auto max-w-[148px] dark:hidden" />
@@ -96,7 +97,7 @@ export function Dashboard() {
                         <ThemeToggle />
                     </div>
                 </div>
-            </header>
+            </PageHeader>
 
             <div className="page-enter px-5 pt-6 pb-24 max-w-lg mx-auto space-y-5">
 

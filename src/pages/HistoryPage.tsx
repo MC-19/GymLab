@@ -20,10 +20,10 @@ export function HistoryPage() {
     const weekSessions = sessionDates(getHistorySessions(allSessions, programs, programFilter, dayFilter), 'week')
 
     return (
-        <div className="page-enter">
+        <div>
             <HistoryNavigation view="progression" />
 
-            <div className="px-5 pt-5 pb-4 max-w-lg mx-auto">
+            <div className="page-enter px-5 pt-5 pb-4 max-w-lg mx-auto">
                 <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">
                     Esta semana · {weekSessions.length} {weekSessions.length === 1 ? 'entrenamiento' : 'entrenamientos'}
                 </p>

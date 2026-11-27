@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { ThemeToggle } from '../ui/ThemeToggle'
+import { PageHeader } from './PageHeader'
 
 const views = [
     { to: '/history', label: 'Sesiones', id: 'sessions' },
@@ -8,13 +9,13 @@ const views = [
 
 export function HistoryNavigation({ view }: { view: typeof views[number]['id'] }) {
     return (
-        <header>
-            <div className="border-b border-gray-200 bg-white dark:border-white/10 dark:bg-black">
+        <>
+            <PageHeader>
                 <div className="mx-auto flex h-14 max-w-lg items-center justify-between px-5">
                     <h1 className="font-bold">Historial</h1>
                     <ThemeToggle />
                 </div>
-            </div>
+            </PageHeader>
             <nav aria-label="Vistas del historial" className="mx-auto flex max-w-lg gap-2 px-5 pt-4">
                 {views.map(({ to, label, id }) => (
                     <Link
@@ -29,6 +30,6 @@ export function HistoryNavigation({ view }: { view: typeof views[number]['id'] }
                     </Link>
                 ))}
             </nav>
-        </header>
+        </>
     )
 }

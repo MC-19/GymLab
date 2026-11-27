@@ -6,6 +6,7 @@ import { useBodyWeight } from '../useBodyWeight'
 import { WeightChart } from './WeightChart'
 import { WeightList } from './WeightList'
 import { AddWeightSheet } from './AddWeightSheet'
+import { PageHeader } from '../../../components/layout/PageHeader'
 
 export function BodyWeightPage() {
     const { entries, todayEntry, lastEntry, weekDelta, addOrUpdateEntry, deleteEntry } = useBodyWeight()
@@ -27,16 +28,15 @@ export function BodyWeightPage() {
                 weekDelta > 0 ? 'amber' : 'gray'
 
     return (
-        <div className="page-enter">
-            {/* Header */}
-            <div className="sticky top-0 z-30 bg-white/80 dark:bg-black/80 backdrop-blur-xl border-b border-gray-100/60 dark:border-white/8">
+        <div>
+            <PageHeader>
                 <div className="flex items-center justify-between px-5 h-14 max-w-lg mx-auto">
                     <h1 className="text-base font-bold text-gray-900 dark:text-white">Peso corporal</h1>
                     <ThemeToggle />
                 </div>
-            </div>
+            </PageHeader>
 
-            <div className="px-5 pt-5 pb-4 max-w-lg mx-auto space-y-5">
+            <div className="page-enter px-5 pt-5 pb-4 max-w-lg mx-auto space-y-5">
                 {/* CTA */}
                 <button
                     id="register-weight-btn"
