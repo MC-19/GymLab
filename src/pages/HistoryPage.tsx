@@ -4,7 +4,7 @@ import { ThemeToggle } from '../components/ui/ThemeToggle'
 import { EmptyState } from '../components/ui/EmptyState'
 import { Badge } from '../components/ui/Badge'
 import { TrendingUp, BarChart2, ChevronRight, Dumbbell } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { getHistory, historyWindows, getHistorySessions } from '../utils/history'
 import { sessionDates } from '../utils/dates'
 import { ExerciseMiniChart } from '../components/ui/ExerciseMiniChart'
@@ -30,6 +30,9 @@ export function HistoryPage() {
             </div>
 
             <div className="px-5 pt-5 pb-4 max-w-lg mx-auto">
+                <Link to="/history/sessions" className="block mb-4 rounded-2xl bg-blue-50 dark:bg-blue-500/10 p-4 font-semibold text-blue-700 dark:text-blue-300">
+                    Historial de entrenamientos
+                </Link>
                 <p className="text-sm text-gray-500 mb-4">
                     Esta semana · {weekSessions.length} {weekSessions.length === 1 ? 'entrenamiento' : 'entrenamientos'}
                 </p>

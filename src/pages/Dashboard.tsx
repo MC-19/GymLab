@@ -1,6 +1,7 @@
 import { Bell, CalendarDays, ChevronRight, ListChecks, Shuffle } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { StartTrainingButton } from '../features/training/StartTrainingButton'
 import { OnboardingCard } from '../components/ui/OnboardingCard'
 import { ThemeToggle } from '../components/ui/ThemeToggle'
 import { WhatsNewModal } from '../components/ui/WhatsNewModal'
@@ -97,6 +98,8 @@ export function Dashboard() {
             </div>
 
             <div className="px-5 pt-6 pb-24 max-w-lg mx-auto space-y-5">
+
+                <StartTrainingButton day={currentDay} followRotation />
 
                 {/* ── EMPTY: Onboarding ────────────────────────────── */}
                 {days.length === 0 ? (

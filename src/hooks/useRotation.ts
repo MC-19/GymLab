@@ -1,9 +1,10 @@
-import { useCallback, useState } from 'react'
-import { useLocalStorage } from './useLocalStorage'
+import { useCallback, useEffect, useState } from 'react'
+import { trainingRepository } from '../features/training/repository'
+import { assertCurrentStorageGeneration } from '../services/storageGeneration'
+import { reportStorageError } from '../services/storageErrors'
 import type { TrainingProgram, WorkoutDay, WorkoutState, CompletedSession } from '../types'
-import { generateId } from '../utils/helpers'
 import { sessionDates } from '../utils/dates'
-import { getActiveDays } from './usePrograms'
+import { getActiveDays, loadPrograms } from './usePrograms'
 import { isWorkoutState, migrateLegacySessions } from '../utils/backup'
 
 const STATE_KEY = 'gymlab_state'
@@ -65,19 +66,68 @@ export function advanceRotation(state: WorkoutState, programId: string, days: Wo
     }
 }
 
+/** Persist the rotation change and its receipt together, after IndexedDB commits. */
+export function reconcileTrainingCompletions(
+    state: WorkoutState, programs: TrainingProgram[], completed: CompletedSession[],
+): WorkoutState {
+    const applied = new Set(state.sessions.map(session => session.id))
+    return completed.reduce((current, session) => {
+        if (applied.has(session.id)) return current
+        applied.add(session.id)
+        const program = programs.find(item => item.id === session.programId && !item.isDeleted)
+        const days = program ? getActiveDays(program) : []
+        if (program && days.some(day => day.id === session.dayId)) {
+            return advanceRotation(current, program.id, days, session)
+        }
+        // Keep the calendar entry when a routine was removed while training.
+        return { ...current, sessions: [...current.sessions, session] }
+    }, state)
+}
+
+function readRotation(storage: Storage, activeProgramId: string, programs: TrainingProgram[]): WorkoutState {
+    const initial = parseWorkoutState(storage.getItem(STATE_KEY), activeProgramId)
+    return programs.reduce((current, program) => {
+        const programDays = getActiveDays(program)
+        if (Object.hasOwn(current.currentDayIdByProgram ?? {}, program.id)) return current
+        return pointRotationAt(current, program.id, programDays, getRotationIndex(current, program.id, programDays))
+    }, initial)
+}
+
+export function writeRotation(
+    storage: Storage, activeProgramId: string, programs: TrainingProgram[],
+    change: (current: WorkoutState) => WorkoutState,
+): void {
+    assertCurrentStorageGeneration(storage)
+    const current = readRotation(storage, activeProgramId, programs)
+    const serialized = JSON.stringify(change(current))
+    if (storage.getItem(STATE_KEY) !== serialized) storage.setItem(STATE_KEY, serialized)
+}
+
 export function useRotation(activeProgram: TrainingProgram | null, programs: TrainingProgram[], days: WorkoutDay[]) {
     const activeProgramId = activeProgram?.id ?? ''
     const [legacySessions] = useState(() => {
         const raw = localStorage.getItem('gymlab_sessions')
         return raw === null ? [] : migrateLegacySessions(JSON.parse(raw))
     })
-    const [state, setState] = useLocalStorage<WorkoutState>(STATE_KEY, DEFAULT_STATE, () => {
-        const initial = parseWorkoutState(localStorage.getItem(STATE_KEY), activeProgramId)
-        return programs.reduce((current, program) => {
-            const programDays = getActiveDays(program)
-            return pointRotationAt(current, program.id, programDays, getRotationIndex(current, program.id, programDays))
-        }, initial)
-    })
+    const [state, setState] = useState(() => readRotation(localStorage, activeProgramId, programs))
+
+    useEffect(() => {
+        const sync = (event: StorageEvent) => {
+            if (event.storageArea !== localStorage || event.key !== STATE_KEY) return
+            setState(readRotation(localStorage, activeProgramId, programs))
+        }
+        window.addEventListener('storage', sync)
+        return () => window.removeEventListener('storage', sync)
+    }, [activeProgramId, programs])
+
+    const update = useCallback(async (change: (current: WorkoutState) => WorkoutState) => {
+        const write = () => writeRotation(localStorage, activeProgramId, programs, change)
+        if (typeof indexedDB === 'undefined') write()
+        else await trainingRepository.coordinateRotation(write)
+        // Another tab may have committed a newer rotation before this callback resumed.
+        setState(readRotation(localStorage, activeProgramId, programs))
+    }, [activeProgramId, programs])
+
     // Keep legacy snapshots in their original key instead of spending quota on a second copy.
     const known = new Set(state.sessions.map(session => session.id))
     const allSessions = [...legacySessions.filter(session => !known.has(session.id)), ...state.sessions]
@@ -88,18 +138,9 @@ export function useRotation(activeProgram: TrainingProgram | null, programs: Tra
         [currentDayIndex]
     )
 
-    const completeSession = useCallback((dayId: string) => {
-        if (!activeProgram) return
-        const session: CompletedSession = {
-            id: generateId(),
-            programId: activeProgram.id,
-            programName: activeProgram.name,
-            dayId,
-            dayName: days.find(day => day.id === dayId)?.name,
-            completedAt: new Date().toISOString(),
-        }
-        setState(prev => advanceRotation(prev, activeProgram.id, days, session))
-    }, [activeProgram, days, setState])
+    const recordTrainingCompletions = useCallback((completed: CompletedSession[]) =>
+        update(current => reconcileTrainingCompletions(current, loadPrograms(localStorage), completed)),
+    [update])
 
     const sessions = allSessions.filter(session =>
         session.programId === activeProgramId
@@ -109,20 +150,20 @@ export function useRotation(activeProgram: TrainingProgram | null, programs: Tra
     const getRecentSessions = (count = 7) => sessionDates(sessions, 'recent', new Date(), count)
 
     const setCurrentDayIndex = useCallback((index: number) => {
-        if (activeProgramId) setState(prev => pointRotationAt(prev, activeProgramId, days, index))
-    }, [activeProgramId, days, setState])
+        if (activeProgramId) void update(prev => pointRotationAt(prev, activeProgramId, days, index)).catch(reportStorageError)
+    }, [activeProgramId, days, update])
 
     return {
         currentDayIndex,
         sessions,
         allSessions,
         getCurrentDay,
-        completeSession,
+        recordTrainingCompletions,
         getRecentSessions,
         resetRotation: () => setCurrentDayIndex(0),
         setCurrentDayIndex,
         removeDay: (dayId: string) => {
-            if (activeProgramId) setState(prev => removeDayFromRotation(prev, activeProgramId, days, dayId))
+            if (activeProgramId) void update(prev => removeDayFromRotation(prev, activeProgramId, days, dayId)).catch(reportStorageError)
         },
         // Anchor the current ID before a structural edit, including newly created programs.
         anchorRotation: () => {

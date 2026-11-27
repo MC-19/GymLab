@@ -1,9 +1,11 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
 import { Download, Home, RefreshCw, TriangleAlert } from 'lucide-react'
+import { trainingRepository } from '../../features/training/repository'
 import { getGymLabStorageKeys } from '../../utils/backup'
 
 interface Props {
     children: ReactNode
+    startupError?: boolean
 }
 
 interface State {
@@ -12,7 +14,7 @@ interface State {
 }
 
 export class AppErrorBoundary extends Component<Props, State> {
-    state: State = { hasError: false, backupError: false }
+    state: State = { hasError: this.props.startupError === true, backupError: false }
 
     static getDerivedStateFromError(): State {
         return { hasError: true, backupError: false }
@@ -22,7 +24,7 @@ export class AppErrorBoundary extends Component<Props, State> {
         console.error('[GymLab] Error no recuperable en la interfaz:', error, info)
     }
 
-    private exportEmergencyBackup = () => {
+    private exportEmergencyBackup = async () => {
         try {
             const storedData = Object.fromEntries(
                 getGymLabStorageKeys(localStorage).map(key => [key, localStorage.getItem(key) ?? ''])
@@ -35,8 +37,11 @@ export class AppErrorBoundary extends Component<Props, State> {
             } catch {
                 // The original storage is still included below.
             }
+            // If IndexedDB itself is unavailable, keep the legacy emergency export usable.
+            const trainingSessions = await trainingRepository.list().catch(() => undefined)
             const backup = JSON.stringify({
-                version: 2,
+                version: trainingSessions ? 3 : 2,
+                trainingSessions,
                 exportedAt: new Date().toISOString(),
                 emergency: true,
                 days,
@@ -73,7 +78,7 @@ export class AppErrorBoundary extends Component<Props, State> {
                         </p>
                     )}
                     <div className="mt-5 space-y-2">
-                        <button onClick={this.exportEmergencyBackup} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white">
+                        <button onClick={() => void this.exportEmergencyBackup()} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white">
                             <Download size={16} />
                             Descargar backup de emergencia
                         </button>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { assertCurrentStorageGeneration } from '../services/storageGeneration'
 import { reportStorageError } from '../services/storageErrors'
 
 /**
@@ -18,6 +19,7 @@ export function useLocalStorage<T>(
 
     useEffect(() => {
         try {
+            assertCurrentStorageGeneration(localStorage)
             const serialized = JSON.stringify(value)
             if (localStorage.getItem(key) !== serialized) localStorage.setItem(key, serialized)
         } catch (error) {

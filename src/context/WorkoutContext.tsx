@@ -48,7 +48,7 @@ interface WorkoutContextType {
     sessions: CompletedSession[]
     allSessions: CompletedSession[]
     getCurrentDay: (days: WorkoutDay[]) => WorkoutDay | null
-    completeSession: (dayId: string) => void
+    recordTrainingCompletions: (sessions: CompletedSession[]) => Promise<void>
     getRecentSessions: (days?: number) => CompletedSession[]
     resetRotation: () => void
     setCurrentDayIndex: (index: number) => void

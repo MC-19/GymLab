@@ -1,3 +1,5 @@
+import { TrainingPage } from './features/training/TrainingPage'
+import { SessionHistoryPage } from './features/training/SessionHistoryPage'
 import { Routes, Route } from 'react-router-dom'
 import { AppShell } from './components/layout/AppShell'
 import { Dashboard } from './pages/Dashboard'
@@ -29,6 +31,9 @@ export default function App() {
         <Route path="/day/:dayId" element={<WorkoutDayPage />} />
         <Route path="/day/:dayId/exercise/:exerciseId" element={<ExercisePage />} />
         <Route path="/day/:dayId/exercise/:exerciseId/week/:weekId" element={<WeekPage />} />
+        <Route path="/training" element={<TrainingPage />} />
+        <Route path="/history/sessions" element={<SessionHistoryPage />} />
+        <Route path="/history/sessions/:sessionId" element={<SessionHistoryPage />} />
         <Route path="/history" element={<HistoryPage />} />
         <Route path="/weight" element={<BodyWeightPage />} />
         <Route path="/settings" element={<SettingsPage />} />
