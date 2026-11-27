@@ -46,9 +46,12 @@ export function PrivacyPage() {
                     </p>
                 </PolicySection>
 
-                <PolicySection title="2. Google Analytics">
+                <PolicySection title="2. Analítica de uso">
                     <p>
                         Con tu permiso, GymLab utiliza Google Analytics 4 para conocer datos generales como visitas, dispositivo aproximado, páginas consultadas y duración de la sesión. Esta información ayuda a detectar problemas y mejorar la aplicación.
+                    </p>
+                    <p>
+                        Vercel Web Analytics mide visitas y datos técnicos de navegación sin cookies analíticas. GymLab elimina los parámetros y los identificadores de sus rutas de entrenamiento antes de enviar las visitas a Vercel.
                     </p>
                     <p>
                         No enviamos a Analytics el contenido de tus rutinas, pesos levantados, peso corporal, notas, series ni archivos de backup. Las señales publicitarias y la personalización de anuncios están desactivadas.
@@ -79,7 +82,7 @@ export function PrivacyPage() {
 
                 <PolicySection title="4. Proveedores externos">
                     <p>
-                        Google presta el servicio de Analytics y puede tratar información técnica conforme a sus propias condiciones. Las fuentes de la interfaz están incluidas en GymLab y no requieren conectarse con Google Fonts.
+                        Google y Vercel prestan los servicios de analítica y pueden tratar información técnica conforme a sus propias condiciones. Las fuentes de la interfaz están incluidas en GymLab.
                     </p>
                     <p>
                         Algunas demostraciones visuales de ejercicios proceden de FitnessProgramer y solo se solicitan cuando consultas contenido que las utiliza. Ese proveedor puede recibir información técnica básica de la conexión, como la dirección IP.
@@ -93,11 +96,20 @@ export function PrivacyPage() {
                         Política de privacidad de Google
                         <ExternalLink size={13} />
                     </a>
+                    <a
+                        href="https://vercel.com/docs/analytics/privacy-policy"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="ml-4 inline-flex items-center gap-1.5 font-medium text-blue-600 underline underline-offset-2 dark:text-blue-400"
+                    >
+                        Privacidad de Vercel Web Analytics
+                        <ExternalLink size={13} />
+                    </a>
                 </PolicySection>
 
                 <PolicySection title="5. Control y conservación">
                     <p>
-                        Puedes rechazar la analítica sin perder ninguna función de GymLab. Los datos locales permanecen hasta que los elimines, borres los datos del navegador o desinstales la PWA. Los plazos aplicables a Analytics son los configurados en la propiedad de Google Analytics.
+                        Puedes rechazar la analítica sin perder ninguna función de GymLab. Los datos locales permanecen hasta que los elimines, borres los datos del navegador o desinstales la PWA. Los plazos de conservación de Google Analytics se configuran en su propiedad. Puedes consultar el tratamiento de datos de Vercel en el enlace del apartado anterior.
                     </p>
                 </PolicySection>
 
@@ -132,7 +144,7 @@ export function PrivacyPage() {
                 </div>
 
                 <p className="text-center text-xs text-gray-400 dark:text-gray-600">
-                    Última actualización: 29 de agosto de 2026
+                    Última actualización: 27 de noviembre de 2026
                 </p>
             </main>
         </div>

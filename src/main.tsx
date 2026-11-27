@@ -1,15 +1,14 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
-import { WorkoutProvider } from './context/WorkoutContext'
-import { TimerProvider } from './context/TimerContext'
 import App from './App'
+import { AppErrorBoundary } from './components/errors/AppErrorBoundary'
+import { TimerProvider } from './context/TimerContext'
+import { WorkoutProvider } from './context/WorkoutContext'
 import { TrainingProvider } from './features/training/TrainingContext'
 import { recoverTrainingRestore, TrainingRecoveryError } from './features/training/backup'
-import { initializeStorageGeneration, STORAGE_GENERATION_KEY } from './services/storageGeneration'
 import './index.css'
-import { AppErrorBoundary } from './components/errors/AppErrorBoundary'
-
+import { initializeStorageGeneration, STORAGE_GENERATION_KEY } from './services/storageGeneration'
 function applyTheme() {
   const theme = localStorage.getItem('gymlab_theme')?.replace(/"/g, '') ?? 'system'
   document.documentElement.classList.toggle('dark',

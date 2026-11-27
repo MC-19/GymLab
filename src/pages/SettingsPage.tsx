@@ -199,7 +199,7 @@ export function SettingsPage() {
                             <div className="min-w-0 flex-1">
                                 <p className="text-sm font-semibold text-gray-900 dark:text-white">Analítica de uso</p>
                                 <p className="mt-0.5 text-xs leading-relaxed text-gray-500">
-                                    Ayuda a medir visitas y mejorar la aplicación. Nunca incluye rutinas, pesos, notas ni series.
+                                    Google Analytics y Vercel Web Analytics ayudan a medir visitas. Tus rutinas, pesos, notas y series se quedan en tu dispositivo.
                                 </p>
                             </div>
                         </div>
