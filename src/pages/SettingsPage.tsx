@@ -137,15 +137,14 @@ export function SettingsPage() {
     }
 
     return (
-        <div className="page-enter">
-            {/* Header */}
-            <div className="sticky top-0 z-30 bg-white/80 dark:bg-black/80 backdrop-blur-xl border-b border-gray-100/60 dark:border-white/8">
+        <div>
+            <header className="border-b border-gray-100/60 bg-white pt-[env(safe-area-inset-top)] dark:border-white/8 dark:bg-black">
                 <div className="flex items-center px-5 h-14 max-w-lg mx-auto">
                     <h1 className="text-base font-bold text-gray-900 dark:text-white">Ajustes</h1>
                 </div>
-            </div>
+            </header>
 
-            <div className="px-5 pt-5 pb-8 max-w-lg mx-auto space-y-6">
+            <div className="page-enter px-5 pt-5 pb-8 max-w-lg mx-auto space-y-6">
 
                 {/* Theme */}
                 <Section title="Apariencia">
